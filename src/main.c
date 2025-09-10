@@ -2,7 +2,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-// Function to invert pixels of an image (negative)
+#define TRUE 1
+#define FALSE 0
+#define SEARCH_WINDOW 14
+
 void invert(unsigned char input_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS],
             unsigned char output_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS]) {
     for (int x = 0; x < BMP_WIDTH; x++) {
@@ -33,7 +36,28 @@ unsigned char *greyscale_bitmap(char input_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHAN
     return (unsigned char *)greyscale_image;
 }
 
-// Main function
+int has_white_pixel(unsigned char image[BMP_WIDTH][BMP_HEIGTH], int start_x, int start_y) {
+    for (int i = 0; i < SEARCH_WINDOW; i++) {
+        for (int j = 0; j < SEARCH_WINDOW; j++) {
+            if (image[start_x + i][start_y + j] == 1) {
+                return TRUE;
+            }
+        }
+    }
+    return FALSE;
+}
+
+void detect_spots(unsigned char input_image[BMP_WIDTH][BMP_HEIGTH]) {
+    // Stops the search before the array is out of bounds
+    for (int x = 0; x <= BMP_WIDTH - SEARCH_WINDOW; x++) {
+        for (int y = 0; y <= BMP_HEIGTH - SEARCH_WINDOW; y++) {
+            if (has_white_pixel(input_image, x, y)) {
+                printf("White pixel detected at window: (%d, %d)\n", x, y);
+            }
+        }
+    }
+}
+
 int main(int argc, char **argv) {
     // argc counts how may arguments are passed
     // argv[0] is a string with the name of the program
