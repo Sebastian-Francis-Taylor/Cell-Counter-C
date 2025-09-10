@@ -1,9 +1,3 @@
-// To compile (linux/mac): gcc cbmp.c main.c -o main.out -std=c99
-// To run (linux/mac): ./main.out example.bmp example_inv.bmp
-
-// To compile (win): gcc cbmp.c main.c -o main.exe -std=c99
-// To run (win): main.exe example.bmp example_inv.bmp
-
 #include "cbmp.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -23,6 +17,21 @@ void invert(unsigned char input_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS],
 // Declaring the array to store the image (unsigned char = unsigned 8 bit)
 unsigned char input_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS];
 unsigned char output_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS];
+
+unsigned char *greyscale_bitmap(char input_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS]) {
+    static unsigned char greyscale_image[BMP_WIDTH][BMP_HEIGTH];
+
+    for (int x = 0; x < BMP_WIDTH; ++x) {
+        for (int y = 0; y < BMP_HEIGTH; ++y) {
+            unsigned int channel_sum = 0;
+            for (int c = 0; c < BMP_CHANNELS; ++c) {
+                channel_sum += (unsigned int)input_image[x][y][c];
+            }
+            greyscale_image[x][y] = channel_sum / BMP_CHANNELS;
+        }
+    }
+    return (unsigned char *)greyscale_image;
+}
 
 // Main function
 int main(int argc, char **argv) {
