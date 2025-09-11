@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define THRESHOLD 69
+#define THRESHOLD 127
 const int PATTERN[3][3] = {
     {0, 1, 0},
     {1, 1, 1},
@@ -28,7 +28,8 @@ void invert(unsigned char input_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS],
     }
 }
 
-unsigned char *applyThreshold(unsigned int threshold, unsigned char input_image[BMP_WIDTH][BMP_HEIGTH]) {
+// Applying the threshold on all pixels
+unsigned char applyThreshold(unsigned int threshold, unsigned char input_image[BMP_WIDTH][BMP_HEIGTH]) {
     unsigned char output_image[BMP_WIDTH][BMP_HEIGTH] = input_image;
     for (int x = 0; x < BMP_WIDTH; ++x) {
         for (int y = 0; y < BMP_HEIGTH; ++y) {
@@ -42,7 +43,8 @@ unsigned char *applyThreshold(unsigned int threshold, unsigned char input_image[
     return output_image;
 }
 
-unsigned char *erodeImage(unsigned char input_image[BMP_WIDTH][BMP_HEIGTH]) {
+// Eroding the image once
+unsigned char erodeImage(unsigned char input_image[BMP_WIDTH][BMP_HEIGTH]) {
     unsigned char output_image[BMP_WIDTH][BMP_HEIGTH] = input_image;
     for (int x = 0; x < BMP_WIDTH; ++x) { // ooof et 4x nested loop, not good :(((
         for (int y = 0; y < BMP_HEIGTH; ++y) {
