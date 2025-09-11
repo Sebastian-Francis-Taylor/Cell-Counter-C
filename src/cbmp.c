@@ -1,6 +1,6 @@
-#include <stdlib.h>
-#include <stdio.h>
 #include "cbmp.h"
+#include <stdio.h>
+#include <stdlib.h>
 
 // Constants
 
@@ -23,10 +23,8 @@
 #define DEPTH_BYTES 2
 #define DEPTH_OFFSET 28
 
-
 // Pixel structure
-typedef struct pixel_data
-{
+typedef struct pixel_data {
     unsigned char red;
     unsigned char green;
     unsigned char blue;
@@ -34,10 +32,9 @@ typedef struct pixel_data
 } pixel;
 
 // BMP structure
-typedef struct BMP_data
-{
+typedef struct BMP_data {
     unsigned int file_byte_number;
-    unsigned char* file_byte_contents;
+    unsigned char *file_byte_contents;
 
     unsigned int pixel_array_start;
 
@@ -45,107 +42,101 @@ typedef struct BMP_data
     unsigned int height;
     unsigned int depth;
 
-    pixel* pixels;
+    pixel *pixels;
 } BMP;
 
-BMP* out_bmp = NULL;
+BMP *out_bmp = NULL;
 
 // Private (ex-public) function declarations
-BMP* bopen(char* file_path);
-BMP* b_deep_copy(BMP* to_copy);
-int get_width(BMP* bmp);
-int get_height(BMP* bmp);
-unsigned int get_depth(BMP* bmp);
-void get_pixel_rgb(BMP* bmp, int x, int y, unsigned char* r, unsigned char* g, unsigned char* b);
-void set_pixel_rgb(BMP* bmp, int x, int y, unsigned char r, unsigned char g, unsigned char b);
-void bwrite(BMP* bmp, char* file_name);
-void bclose(BMP* bmp);
+BMP *bopen(char *file_path);
+BMP *b_deep_copy(BMP *to_copy);
+int get_width(BMP *bmp);
+int get_height(BMP *bmp);
+unsigned int get_depth(BMP *bmp);
+void get_pixel_rgb(BMP *bmp, int x, int y, unsigned char *r, unsigned char *g, unsigned char *b);
+void set_pixel_rgb(BMP *bmp, int x, int y, unsigned char r, unsigned char g, unsigned char b);
+void bwrite(BMP *bmp, char *file_name);
+void bclose(BMP *bmp);
 
 // Private function declarations
-void _throw_error(char* message);
-unsigned int _get_int_from_buffer(unsigned int bytes,
-                                  unsigned int offset,
-                                  unsigned char* buffer);
-unsigned int _get_file_byte_number(FILE* fp);
-unsigned char* _get_file_byte_contents(FILE* fp, unsigned int file_byte_number);
-int _validate_file_type(unsigned char* file_byte_contents);
+void _throw_error(char *message);
+unsigned int _get_int_from_buffer(unsigned int bytes, unsigned int offset, unsigned char *buffer);
+unsigned int _get_file_byte_number(FILE *fp);
+unsigned char *_get_file_byte_contents(FILE *fp, unsigned int file_byte_number);
+int _validate_file_type(unsigned char *file_byte_contents);
 int _validate_depth(unsigned int depth);
-unsigned int _get_pixel_array_start(unsigned char* file_byte_contents);
-int _get_width(unsigned char* file_byte_contents);
-int _get_height(unsigned char* file_byte_contents);
-unsigned int _get_depth(unsigned char* file_byte_contents);
-void _update_file_byte_contents(BMP* bmp, int index, int offset, int channel);
-void _populate_pixel_array(BMP* bmp);
-void _map(BMP* bmp, void (*f)(BMP* bmp, int, int, int));
-void _get_pixel(BMP* bmp, int index, int offset, int channel);
+unsigned int _get_pixel_array_start(unsigned char *file_byte_contents);
+int _get_width(unsigned char *file_byte_contents);
+int _get_height(unsigned char *file_byte_contents);
+unsigned int _get_depth(unsigned char *file_byte_contents);
+void _update_file_byte_contents(BMP *bmp, int index, int offset, int channel);
+void _populate_pixel_array(BMP *bmp);
+void _map(BMP *bmp, void (*f)(BMP *bmp, int, int, int));
+void _get_pixel(BMP *bmp, int index, int offset, int channel);
 
 // Public function implementations
-void read_bitmap(char * input_file_path, unsigned char output_image_array[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS]){
-  // Read image into BMP struct
-  BMP* in_bmp = bopen(input_file_path);
-  int width = get_width(in_bmp);
-  int height = get_height(in_bmp);
-  if (width != BMP_WIDTH || height != BMP_HEIGTH) {
-    _throw_error("Invalid bitmap width and/or height. Must be 950x950 pixels.");
-  }
-  if (out_bmp==NULL) {
-    out_bmp = b_deep_copy(in_bmp);
-  }
-  // Convert to RGB array
-  unsigned char r;
-  unsigned char g;
-  unsigned char b;
-  for (int x = 0; x < BMP_WIDTH; x++)
-  {
-      for (int y = 0; y < BMP_HEIGTH; y++)
-      {
-          get_pixel_rgb(in_bmp, x, y, &r, &g, &b);
-          output_image_array[x][BMP_HEIGTH-1-y][0] = r;
-          output_image_array[x][BMP_HEIGTH-1-y][1] = g;
-          output_image_array[x][BMP_HEIGTH-1-y][2] = b;
-      }
-  }
-  bclose(in_bmp);
+void read_bitmap(char *input_file_path,
+                 unsigned char output_image_array[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS]) {
+    // Read image into BMP struct
+    BMP *in_bmp = bopen(input_file_path);
+    int width = get_width(in_bmp);
+    int height = get_height(in_bmp);
+    if (width != BMP_WIDTH || height != BMP_HEIGTH) {
+        _throw_error("Invalid bitmap width and/or height. Must be 950x950 pixels.");
+    }
+    if (out_bmp == NULL) {
+        out_bmp = b_deep_copy(in_bmp);
+    }
+    // Convert to RGB array
+    unsigned char r;
+    unsigned char g;
+    unsigned char b;
+    for (int x = 0; x < BMP_WIDTH; x++) {
+        for (int y = 0; y < BMP_HEIGTH; y++) {
+            get_pixel_rgb(in_bmp, x, y, &r, &g, &b);
+            output_image_array[x][BMP_HEIGTH - 1 - y][0] = r;
+            output_image_array[x][BMP_HEIGTH - 1 - y][1] = g;
+            output_image_array[x][BMP_HEIGTH - 1 - y][2] = b;
+        }
+    }
+    bclose(in_bmp);
 }
 
-void write_bitmap(unsigned char input_image_array[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS], char * output_file_path){
-  if (out_bmp == NULL) {
-    _throw_error("The function 'read_bitmap' must be called at least once before calling the function 'write_bitmap'.");
-  }
-  unsigned char r;
-  unsigned char g;
-  unsigned char b;
-  for (int x = 0; x < BMP_WIDTH; x++)
-  {
-    for (int y = 0; y < BMP_HEIGTH; y++)
-    {
-      r = input_image_array[x][BMP_HEIGTH-1-y][0];
-      g = input_image_array[x][BMP_HEIGTH-1-y][1];
-      b = input_image_array[x][BMP_HEIGTH-1-y][2];
-      set_pixel_rgb(out_bmp, x, y, r, g, b);
+void write_bitmap(unsigned char input_image_array[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS],
+                  char *output_file_path) {
+    if (out_bmp == NULL) {
+        _throw_error("The function 'read_bitmap' must be called at least once before calling the "
+                     "function 'write_bitmap'.");
     }
-  }
-  bwrite(out_bmp, output_file_path);
+    unsigned char r;
+    unsigned char g;
+    unsigned char b;
+    for (int x = 0; x < BMP_WIDTH; x++) {
+        for (int y = 0; y < BMP_HEIGTH; y++) {
+            r = input_image_array[x][BMP_HEIGTH - 1 - y][0];
+            g = input_image_array[x][BMP_HEIGTH - 1 - y][1];
+            b = input_image_array[x][BMP_HEIGTH - 1 - y][2];
+            set_pixel_rgb(out_bmp, x, y, r, g, b);
+        }
+    }
+    bwrite(out_bmp, output_file_path);
 }
 
 // Private (ex-public) function declarations
-BMP* bopen(char* file_path)
-{
-    FILE* fp = fopen(file_path, "rb");
+BMP *bopen(char *file_path) {
+    FILE *fp = fopen(file_path, "rb");
 
-    if (fp == NULL)
-    {
+    if (fp == NULL) {
         perror("Error opening file");
         exit(EXIT_FAILURE);
     }
 
-    BMP* bmp = (BMP*) malloc(sizeof(BMP));
+    BMP *bmp = (BMP *)malloc(sizeof(BMP));
     bmp->file_byte_number = _get_file_byte_number(fp);
     bmp->file_byte_contents = _get_file_byte_contents(fp, bmp->file_byte_number);
     fclose(fp);
 
-    if(!_validate_file_type(bmp->file_byte_contents))
-    {
+    if (!_validate_file_type(bmp->file_byte_contents)) {
         _throw_error("Invalid file type");
     }
 
@@ -155,12 +146,11 @@ BMP* bopen(char* file_path)
     bmp->height = _get_height(bmp->file_byte_contents);
     bmp->depth = _get_depth(bmp->file_byte_contents);
 
-	//printf("bmp->width %d\n", bmp->width);
-	//printf("bmp->height %d\n", bmp->height);
-	//printf("bmp->depth %d\n", bmp->depth);
+    // printf("bmp->width %d\n", bmp->width);
+    // printf("bmp->height %d\n", bmp->height);
+    // printf("bmp->depth %d\n", bmp->depth);
 
-    if(!_validate_depth(bmp->depth))
-    {
+    if (!_validate_depth(bmp->depth)) {
         _throw_error("Invalid file depth");
     }
 
@@ -169,31 +159,28 @@ BMP* bopen(char* file_path)
     return bmp;
 }
 
-BMP* b_deep_copy(BMP* to_copy)
-{
-    BMP* copy = (BMP*) malloc(sizeof(BMP));
+BMP *b_deep_copy(BMP *to_copy) {
+    BMP *copy = (BMP *)malloc(sizeof(BMP));
     copy->file_byte_number = to_copy->file_byte_number;
     copy->pixel_array_start = to_copy->pixel_array_start;
     copy->width = to_copy->width;
     copy->height = to_copy->height;
     copy->depth = to_copy->depth;
 
-    copy->file_byte_contents = (unsigned char*) malloc(copy->file_byte_number * sizeof(unsigned char));
+    copy->file_byte_contents =
+        (unsigned char *)malloc(copy->file_byte_number * sizeof(unsigned char));
 
     unsigned int i;
-    for (i = 0; i < copy->file_byte_number; i++)
-    {
+    for (i = 0; i < copy->file_byte_number; i++) {
         copy->file_byte_contents[i] = to_copy->file_byte_contents[i];
     }
 
-    copy->pixels = (pixel*) malloc(copy->width * copy->height * sizeof(pixel));
+    copy->pixels = (pixel *)malloc(copy->width * copy->height * sizeof(pixel));
 
     unsigned int x, y;
     int index;
-    for (y = 0; y < copy->height; y++)
-    {
-        for (x = 0; x < copy->width; x++)
-        {
+    for (y = 0; y < copy->height; y++) {
+        for (x = 0; x < copy->width; x++) {
             index = y * copy->width + x;
             copy->pixels[index].red = to_copy->pixels[index].red;
             copy->pixels[index].green = to_copy->pixels[index].green;
@@ -205,48 +192,35 @@ BMP* b_deep_copy(BMP* to_copy)
     return copy;
 }
 
-int get_width(BMP* bmp)
-{
-    return bmp->width;
-}
+int get_width(BMP *bmp) { return bmp->width; }
 
-int get_height(BMP* bmp)
-{
-    return bmp->height;
-}
+int get_height(BMP *bmp) { return bmp->height; }
 
-unsigned int get_depth(BMP* bmp)
-{
-    return bmp->depth;
-}
+unsigned int get_depth(BMP *bmp) { return bmp->depth; }
 
-void get_pixel_rgb(BMP* bmp, int x, int y, unsigned char* r, unsigned char* g, unsigned char* b)
-{
+void get_pixel_rgb(BMP *bmp, int x, int y, unsigned char *r, unsigned char *g, unsigned char *b) {
     int index = y * bmp->width + x;
     *r = bmp->pixels[index].red;
     *g = bmp->pixels[index].green;
     *b = bmp->pixels[index].blue;
 }
 
-void set_pixel_rgb(BMP* bmp, int x, int y, unsigned char r, unsigned char g, unsigned char b)
-{
+void set_pixel_rgb(BMP *bmp, int x, int y, unsigned char r, unsigned char g, unsigned char b) {
     int index = y * bmp->width + x;
     bmp->pixels[index].red = r;
     bmp->pixels[index].green = g;
     bmp->pixels[index].blue = b;
 }
 
-void bwrite(BMP* bmp, char* file_name)
-{
+void bwrite(BMP *bmp, char *file_name) {
     _map(bmp, _update_file_byte_contents);
 
-    FILE* fp = fopen(file_name, "wb");
+    FILE *fp = fopen(file_name, "wb");
     fwrite(bmp->file_byte_contents, sizeof(char), bmp->file_byte_number, fp);
     fclose(fp);
 }
 
-void bclose(BMP* bmp)
-{
+void bclose(BMP *bmp) {
     free(bmp->pixels);
     bmp->pixels = NULL;
     free(bmp->file_byte_contents);
@@ -255,34 +229,27 @@ void bclose(BMP* bmp)
     bmp = NULL;
 }
 
-
 // Private function implementations
 
-void _throw_error(char* message)
-{
+void _throw_error(char *message) {
     fprintf(stderr, "%s\n", message);
     exit(1);
 }
 
-unsigned int _get_int_from_buffer(unsigned int bytes,
-                                  unsigned int offset,
-                                  unsigned char* buffer)
-{
-    unsigned char* _buffer = (unsigned char*) malloc(bytes * sizeof(unsigned char));
+unsigned int _get_int_from_buffer(unsigned int bytes, unsigned int offset, unsigned char *buffer) {
+    unsigned char *_buffer = (unsigned char *)malloc(bytes * sizeof(unsigned char));
 
     unsigned int i;
-    for (i = 0; i < bytes; i++)
-    {
+    for (i = 0; i < bytes; i++) {
         _buffer[i] = buffer[i + offset];
     }
 
-    unsigned int value = *(unsigned int*) _buffer;
+    unsigned int value = *(unsigned int *)_buffer;
     free(_buffer);
     return value;
 }
 
-unsigned int _get_file_byte_number(FILE* fp)
-{
+unsigned int _get_file_byte_number(FILE *fp) {
     unsigned int byte_number;
     fseek(fp, 0, SEEK_END);
     byte_number = ftell(fp);
@@ -290,122 +257,105 @@ unsigned int _get_file_byte_number(FILE* fp)
     return byte_number;
 }
 
-unsigned char* _get_file_byte_contents(FILE* fp, unsigned int file_byte_number)
-{
-    unsigned char* buffer = (unsigned char*) malloc(file_byte_number * sizeof(char));
+unsigned char *_get_file_byte_contents(FILE *fp, unsigned int file_byte_number) {
+    unsigned char *buffer = (unsigned char *)malloc(file_byte_number * sizeof(char));
     unsigned int result = fread(buffer, 1, file_byte_number, fp);
 
-    if (result != file_byte_number)
-    {
+    if (result != file_byte_number) {
         _throw_error("There was a problem reading the file");
     }
-
 
     return buffer;
 }
 
-int _validate_file_type(unsigned char* file_byte_contents)
-{
+int _validate_file_type(unsigned char *file_byte_contents) {
     return file_byte_contents[0] == 'B' && file_byte_contents[1] == 'M';
 }
 
-int _validate_depth(unsigned int depth)
-{
-    return depth == 24 || depth == 32;
+int _validate_depth(unsigned int depth) { return depth == 24 || depth == 32; }
+
+unsigned int _get_pixel_array_start(unsigned char *file_byte_contents) {
+    return _get_int_from_buffer(PIXEL_ARRAY_START_BYTES, PIXEL_ARRAY_START_OFFSET,
+                                file_byte_contents);
 }
 
-unsigned int _get_pixel_array_start(unsigned char* file_byte_contents)
-{
-    return _get_int_from_buffer(PIXEL_ARRAY_START_BYTES, PIXEL_ARRAY_START_OFFSET, file_byte_contents);
+int _get_width(unsigned char *file_byte_contents) {
+    return (int)_get_int_from_buffer(WIDTH_BYTES, WIDTH_OFFSET, file_byte_contents);
 }
 
-int _get_width(unsigned char* file_byte_contents)
-{
-    return (int) _get_int_from_buffer(WIDTH_BYTES, WIDTH_OFFSET, file_byte_contents);
+int _get_height(unsigned char *file_byte_contents) {
+    return (int)_get_int_from_buffer(HEIGHT_BYTES, HEIGHT_OFFSET, file_byte_contents);
 }
 
-int _get_height(unsigned char* file_byte_contents)
-{
-    return (int) _get_int_from_buffer(HEIGHT_BYTES, HEIGHT_OFFSET, file_byte_contents);
+unsigned int _get_depth(unsigned char *file_byte_contents) {
+    if (_get_int_from_buffer(DEPTH_BYTES, DEPTH_OFFSET, file_byte_contents) == 32 ||
+        _get_int_from_buffer(DEPTH_BYTES, DEPTH_OFFSET, file_byte_contents) == 24) {
+        return _get_int_from_buffer(DEPTH_BYTES, DEPTH_OFFSET, file_byte_contents);
+    } else {
+        // We are in a windows environment (patch)
+        // printf("%d", (_get_int_from_buffer(DEPTH_BYTES, DEPTH_OFFSET, file_byte_contents)) & 0xFF
+        // );
+        return (_get_int_from_buffer(DEPTH_BYTES, DEPTH_OFFSET, file_byte_contents)) & 0xFF;
+    }
 }
 
-unsigned int _get_depth(unsigned char* file_byte_contents)
-{
-    if(_get_int_from_buffer(DEPTH_BYTES, DEPTH_OFFSET, file_byte_contents)==32 || _get_int_from_buffer(DEPTH_BYTES, DEPTH_OFFSET, file_byte_contents)==24){
-		return _get_int_from_buffer(DEPTH_BYTES, DEPTH_OFFSET, file_byte_contents);
-	}else{
-		//We are in a windows environment (patch)
-		//printf("%d", (_get_int_from_buffer(DEPTH_BYTES, DEPTH_OFFSET, file_byte_contents)) & 0xFF );
-		return (_get_int_from_buffer(DEPTH_BYTES, DEPTH_OFFSET, file_byte_contents)) & 0xFF;
-	}
-		
-}
-
-void _update_file_byte_contents(BMP* bmp, int index, int offset, int channel)
-{
+void _update_file_byte_contents(BMP *bmp, int index, int offset, int channel) {
     char value;
-    switch(channel)
-    {
-        case BLUE:
-            value = bmp->pixels[index].blue;
-            break;
-        case GREEN:
-            value = bmp->pixels[index].green;
-            break;
-        case RED:
-            value = bmp->pixels[index].red;
-            break;
-        case ALPHA:
-            value = bmp->pixels[index].alpha;
-            break;
+    switch (channel) {
+    case BLUE:
+        value = bmp->pixels[index].blue;
+        break;
+    case GREEN:
+        value = bmp->pixels[index].green;
+        break;
+    case RED:
+        value = bmp->pixels[index].red;
+        break;
+    case ALPHA:
+        value = bmp->pixels[index].alpha;
+        break;
     }
     bmp->file_byte_contents[offset + channel] = value;
 }
 
-void _populate_pixel_array(BMP* bmp)
-{
-    bmp->pixels = (pixel*) malloc(bmp->width * bmp->height * sizeof(pixel));
+void _populate_pixel_array(BMP *bmp) {
+    bmp->pixels = (pixel *)malloc(bmp->width * bmp->height * sizeof(pixel));
     _map(bmp, _get_pixel);
 }
 
-void _map(BMP* bmp, void (*f)(BMP*, int, int, int))
-{
+void _map(BMP *bmp, void (*f)(BMP *, int, int, int)) {
     int channels = bmp->depth / (sizeof(unsigned char) * BITS_PER_BYTE);
-    int row_size = ((int) (bmp->depth * bmp->width + 31) / 32) * 4;
+    int row_size = ((int)(bmp->depth * bmp->width + 31) / 32) * 4;
     int padding = row_size - bmp->width * channels;
 
     int c;
     unsigned int x, y, index, offset;
-    for (y = 0; y < bmp->height; y++)
-    {
-        for (x = 0; x < bmp->width; x++)
-        {
+    for (y = 0; y < bmp->height; y++) {
+        for (x = 0; x < bmp->width; x++) {
             index = y * bmp->width + x;
             offset = bmp->pixel_array_start + index * channels + y * padding;
-            for (c = 0; c < channels; c++)
-            {
+            for (c = 0; c < channels; c++) {
                 (*f)(bmp, index, offset, c);
             }
         }
     }
 }
 
-void _get_pixel(BMP* bmp, int index, int offset, int channel)
-{
-    unsigned char value = _get_int_from_buffer(sizeof(unsigned char), offset + channel, bmp->file_byte_contents);
-    switch(channel)
-    {
-        case BLUE:
-            bmp->pixels[index].blue = value;
-            break;
-        case GREEN:
-            bmp->pixels[index].green = value;
-            break;
-        case RED:
-            bmp->pixels[index].red = value;
-            break;
-        case ALPHA:
-            bmp->pixels[index].alpha = value;
-            break;
+void _get_pixel(BMP *bmp, int index, int offset, int channel) {
+    unsigned char value =
+        _get_int_from_buffer(sizeof(unsigned char), offset + channel, bmp->file_byte_contents);
+    switch (channel) {
+    case BLUE:
+        bmp->pixels[index].blue = value;
+        break;
+    case GREEN:
+        bmp->pixels[index].green = value;
+        break;
+    case RED:
+        bmp->pixels[index].red = value;
+        break;
+    case ALPHA:
+        bmp->pixels[index].alpha = value;
+        break;
     }
 }
