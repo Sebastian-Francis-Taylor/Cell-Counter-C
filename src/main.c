@@ -8,6 +8,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#define THRESHOLD 69
+#define PATTERN { \
+    {0, 1, 0}, \
+    {1, 1, 1}, \
+    {0, 1, 0}  \
+}
+#define PATTERN_SIZE 3 // needs to be odd
+#define PATTERN_CENTER ((PATTERN_SIZE - 1) << 1)
+
 // Function to invert pixels of an image (negative)
 void invert(unsigned char input_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS],
             unsigned char output_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS]) {
@@ -18,6 +27,30 @@ void invert(unsigned char input_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS],
             }
         }
     }
+}
+
+unsigned char *applyThreshold(unsigned int threshold, unsigned char input_image[BMP_WIDTH][BMP_HEIGTH]) {
+    unsigned char output_image[BMP_WIDTH][BMP_HEIGTH] = input_image;
+    for (int x = 0; x < BMP_WIDTH; ++x) {
+        for (int y = 0; y < BMP_HEIGTH; ++y) {
+            if (input_image[x][y] <= THRESHOLD) {
+                output_image[x][y] = 0;
+            } else {
+                output_image[x][y] = 255;
+            }
+        }
+    }
+    return output_image;
+}
+
+unsigned char *erodeImage(unsigned char input_image[BMP_WIDTH][BMP_HEIGTH]) {
+    unsigned char output_image[BMP_WIDTH][BMP_HEIGTH] = input_image;
+    for (int x = 0; x < BMP_WIDTH; ++x) {
+        for (int y = 0; y < BMP_HEIGTH; ++y) {
+            int onlyfans = PATTERN_SIZE >> 1;
+        }
+    }
+    return output_image;
 }
 
 // Declaring the array to store the image (unsigned char = unsigned 8 bit)
