@@ -47,12 +47,14 @@ unsigned char *erodeImage(unsigned char input_image[BMP_WIDTH][BMP_HEIGTH]) {
     for (int x = 0; x < BMP_WIDTH; ++x) { // ooof et 4x nested loop, not good :(((
         for (int y = 0; y < BMP_HEIGTH; ++y) {
 
-            for (int _x = 0; x < PATTERN_SIZE ; ++x) {
-                for (int _y = 0; y < PATTERN_SIZE; ++y) {
-                    output_image[x][y] = (PATTERN[_x][_y] == 1 && input_image[_x][_y] == 1) * 255;
+            if (input_image[x][y] == 0) {
+                for (int _x = 0; x < PATTERN_SIZE ; ++x) {
+                    for (int _y = 0; y < PATTERN_SIZE; ++y) {
+                        output_image[x][y] = (PATTERN[_x][_y] == 1 && input_image[_x][_y] >= 1) * 255;
+                    }
                 }
             }
-        
+
         }
     }
     return output_image;
