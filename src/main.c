@@ -29,23 +29,27 @@ void invert(unsigned char input_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS],
 }
 
 // Applying the threshold on all pixels
-unsigned char applyThreshold(unsigned int threshold, unsigned char input_image[BMP_WIDTH][BMP_HEIGTH]) {
-    unsigned char output_image[BMP_WIDTH][BMP_HEIGTH] = input_image;
+static void applyThreshold(unsigned int threshold,
+                    unsigned char input_image[BMP_WIDTH][BMP_HEIGTH]) {
+    unsigned char output_image[BMP_WIDTH][BMP_HEIGTH];
+        for (int x = 0; x < BMP_WIDTH; ++x) {
+    for (int y = 0; y < BMP_HEIGTH; ++y) {
+        output_image[x][y] = input_image[x][y];
+    }}
     for (int x = 0; x < BMP_WIDTH; ++x) {
         for (int y = 0; y < BMP_HEIGTH; ++y) {
-            if (input_image[x][y] <= THRESHOLD) {
-                output_image[x][y] = 0;
-            } else {
-                output_image[x][y] = 255;
-            }
+            output_image[x][y] = (input_image[x][y] <= threshold) ? 0 : 255;
         }
     }
-    return output_image;
 }
 
 // Eroding the image once
-unsigned char erodeImage(unsigned char input_image[BMP_WIDTH][BMP_HEIGTH]) {
-    unsigned char output_image[BMP_WIDTH][BMP_HEIGTH] = input_image;
+static unsigned char erodeImage(unsigned char input_image[BMP_WIDTH][BMP_HEIGTH]) {
+    unsigned char output_image[BMP_WIDTH][BMP_HEIGTH];
+        for (int x = 0; x < BMP_WIDTH; ++x) {
+    for (int y = 0; y < BMP_HEIGTH; ++y) {
+        output_image[x][y] = input_image[x][y];
+    }}
     for (int x = 0; x < BMP_WIDTH; ++x) { // ooof et 4x nested loop, not good :(((
         for (int y = 0; y < BMP_HEIGTH; ++y) {
 
