@@ -3,12 +3,7 @@
 #include <stdlib.h>
 
 #define THRESHOLD 127
-const int PATTERN[3][3] = {
-    {0, 1, 0},
-    {1, 1, 1},
-    {0, 1, 0}
-};
-
+const int PATTERN[3][3] = {{0, 1, 0}, {1, 1, 1}, {0, 1, 0}};
 
 #define PATTERN_SIZE 3 // needs to be odd
 #define PATTERN_CENTER ((PATTERN_SIZE - 1) << 1)
@@ -30,12 +25,13 @@ void invert(unsigned char input_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS],
 
 // Applying the threshold on all pixels
 static void applyThreshold(unsigned int threshold,
-                    unsigned char input_image[BMP_WIDTH][BMP_HEIGTH]) {
+                           unsigned char input_image[BMP_WIDTH][BMP_HEIGTH]) {
     unsigned char output_image[BMP_WIDTH][BMP_HEIGTH];
-        for (int x = 0; x < BMP_WIDTH; ++x) {
-    for (int y = 0; y < BMP_HEIGTH; ++y) {
-        output_image[x][y] = input_image[x][y];
-    }}
+    for (int x = 0; x < BMP_WIDTH; ++x) {
+        for (int y = 0; y < BMP_HEIGTH; ++y) {
+            output_image[x][y] = input_image[x][y];
+        }
+    }
     for (int x = 0; x < BMP_WIDTH; ++x) {
         for (int y = 0; y < BMP_HEIGTH; ++y) {
             output_image[x][y] = (input_image[x][y] <= threshold) ? 0 : 255;
@@ -46,21 +42,22 @@ static void applyThreshold(unsigned int threshold,
 // Eroding the image once
 static unsigned char erodeImage(unsigned char input_image[BMP_WIDTH][BMP_HEIGTH]) {
     unsigned char output_image[BMP_WIDTH][BMP_HEIGTH];
-        for (int x = 0; x < BMP_WIDTH; ++x) {
-    for (int y = 0; y < BMP_HEIGTH; ++y) {
-        output_image[x][y] = input_image[x][y];
-    }}
+    for (int x = 0; x < BMP_WIDTH; ++x) {
+        for (int y = 0; y < BMP_HEIGTH; ++y) {
+            output_image[x][y] = input_image[x][y];
+        }
+    }
     for (int x = 0; x < BMP_WIDTH; ++x) { // ooof et 4x nested loop, not good :(((
         for (int y = 0; y < BMP_HEIGTH; ++y) {
 
             if (input_image[x][y] == 0) {
-                for (int _x = 0; x < PATTERN_SIZE ; ++x) {
+                for (int _x = 0; x < PATTERN_SIZE; ++x) {
                     for (int _y = 0; y < PATTERN_SIZE; ++y) {
-                        output_image[x][y] = (PATTERN[_x][_y] == 1 && input_image[_x][_y] >= 1) * 255;
+                        output_image[x][y] =
+                            (PATTERN[_x][_y] == 1 && input_image[_x][_y] >= 1) * 255;
                     }
                 }
             }
-
         }
     }
     return output_image;
