@@ -40,7 +40,7 @@ static void applyThreshold(unsigned int threshold,
 }
 
 // Eroding the image once
-static unsigned char erodeImage(unsigned char input_image[BMP_WIDTH][BMP_HEIGTH]) {
+void erode_image(unsigned char input_image[BMP_WIDTH][BMP_HEIGTH]) {
     unsigned char output_image[BMP_WIDTH][BMP_HEIGTH];
     for (int x = 0; x < BMP_WIDTH; ++x) {
         for (int y = 0; y < BMP_HEIGTH; ++y) {
@@ -60,7 +60,6 @@ static unsigned char erodeImage(unsigned char input_image[BMP_WIDTH][BMP_HEIGTH]
             }
         }
     }
-    return output_image;
 }
 
 // Declaring the array to store the image (unsigned char = unsigned 8 bit)
