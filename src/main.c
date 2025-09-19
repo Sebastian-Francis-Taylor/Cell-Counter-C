@@ -12,8 +12,12 @@ const int PATTERN[3][3] = {{0, 1, 0}, {1, 1, 1}, {0, 1, 0}};
 #define FALSE 0
 #define SEARCH_WINDOW 14
 
-void invert(unsigned char input_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS],
-            unsigned char output_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS]) {
+// Declaring the array to store the image (unsigned char = unsigned 8 bit)
+unsigned char input_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS];
+unsigned char output_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS];
+static unsigned char greyscale_image[BMP_WIDTH][BMP_HEIGTH];
+
+void invert(unsigned char input_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS], unsigned char output_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS]) {
     for (int x = 0; x < BMP_WIDTH; x++) {
         for (int y = 0; y < BMP_HEIGTH; y++) {
             for (int c = 0; c < BMP_CHANNELS; c++) {
@@ -24,8 +28,7 @@ void invert(unsigned char input_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS],
 }
 
 // Applying the threshold on all pixels
-static void applyThreshold(unsigned int threshold,
-                           unsigned char input_image[BMP_WIDTH][BMP_HEIGTH]) {
+static void apply_threshold(unsigned int threshold, unsigned char input_image[BMP_WIDTH][BMP_HEIGTH]) {
     unsigned char output_image[BMP_WIDTH][BMP_HEIGTH];
     for (int x = 0; x < BMP_WIDTH; ++x) {
         for (int y = 0; y < BMP_HEIGTH; ++y) {
@@ -53,8 +56,7 @@ void erode_image(unsigned char input_image[BMP_WIDTH][BMP_HEIGTH]) {
             if (input_image[x][y] == 0) {
                 for (int _x = 0; x < PATTERN_SIZE; ++x) {
                     for (int _y = 0; y < PATTERN_SIZE; ++y) {
-                        output_image[x][y] =
-                            (PATTERN[_x][_y] == 1 && input_image[_x][_y] >= 1) * 255;
+                        output_image[x][y] = (PATTERN[_x][_y] == 1 && input_image[_x][_y] >= 1) * 255;
                     }
                 }
             }
@@ -62,13 +64,7 @@ void erode_image(unsigned char input_image[BMP_WIDTH][BMP_HEIGTH]) {
     }
 }
 
-// Declaring the array to store the image (unsigned char = unsigned 8 bit)
-unsigned char input_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS];
-unsigned char output_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS];
-
-unsigned char *greyscale_bitmap(char input_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS]) {
-    static unsigned char greyscale_image[BMP_WIDTH][BMP_HEIGTH];
-
+void greyscale_bitmap(unsigned char input_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS]) {
     for (int x = 0; x < BMP_WIDTH; ++x) {
         for (int y = 0; y < BMP_HEIGTH; ++y) {
             unsigned int channel_sum = 0;
@@ -78,7 +74,6 @@ unsigned char *greyscale_bitmap(char input_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHAN
             greyscale_image[x][y] = channel_sum / BMP_CHANNELS;
         }
     }
-    return (unsigned char *)greyscale_image;
 }
 
 int has_white_pixel(unsigned char image[BMP_WIDTH][BMP_HEIGTH], int start_x, int start_y) {
@@ -91,8 +86,7 @@ int has_white_pixel(unsigned char image[BMP_WIDTH][BMP_HEIGTH], int start_x, int
             int current_y = start_y + j;
 
             // Check if current position is on the perimeter
-            int is_perimeter =
-                (i == 0 || i == SEARCH_WINDOW - 1 || j == 0 || j == SEARCH_WINDOW - 1);
+            int is_perimeter = (i == 0 || i == SEARCH_WINDOW - 1 || j == 0 || j == SEARCH_WINDOW - 1);
 
             if (image[current_x][current_y] == 1) {
                 if (is_perimeter) {
@@ -138,9 +132,16 @@ int main(int argc, char **argv) {
 
     // Load image from file
     read_bitmap(argv[1], input_image);
+    write_bitmap(input_image, "step_0.bmp");
 
-    // Run inversion
-    invert(input_image, output_image);
+    greyscale_bitmap(input_image);
+    apply_threshold(1, greyscale_image);
+
+    // Temp loop just for showcase
+    while (1) {
+        erode_image(greyscale_image);
+        detect_spots(greyscale_image);
+    }
 
     // Save image to file
     write_bitmap(output_image, argv[2]);
