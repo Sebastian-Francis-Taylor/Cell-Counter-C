@@ -83,25 +83,44 @@ unsigned char *greyscale_bitmap(char input_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHAN
 }
 
 int has_white_pixel(unsigned char image[BMP_WIDTH][BMP_HEIGTH], int start_x, int start_y) {
+    int has_pixel_in_interior = 0;
+    int has_pixel_on_perimeter = 0;
+
     for (int i = 0; i < SEARCH_WINDOW; i++) {
         for (int j = 0; j < SEARCH_WINDOW; j++) {
-            if (image[start_x + i][start_y + j] == 1) {
-                return TRUE;
+            int current_x = start_x + i;
+            int current_y = start_y + j;
+
+            // Check if current position is on the perimeter
+            int is_perimeter =
+                (i == 0 || i == SEARCH_WINDOW - 1 || j == 0 || j == SEARCH_WINDOW - 1);
+
+            if (image[current_x][current_y] == 1) {
+                if (is_perimeter) {
+                    has_pixel_on_perimeter = 1;
+                } else {
+                    has_pixel_in_interior = 1;
+                }
             }
         }
     }
-    return FALSE;
+
+    // Return TRUE only if there's a white pixel in interior AND no white pixels on perimeter
+    return (has_pixel_in_interior && !has_pixel_on_perimeter) ? TRUE : FALSE;
 }
 
 void detect_spots(unsigned char input_image[BMP_WIDTH][BMP_HEIGTH]) {
+    int cells_found = 0;
     // Stops the search before the array is out of bounds
     for (int x = 0; x <= BMP_WIDTH - SEARCH_WINDOW; x++) {
         for (int y = 0; y <= BMP_HEIGTH - SEARCH_WINDOW; y++) {
             if (has_white_pixel(input_image, x, y)) {
                 printf("White pixel detected at window: (%d, %d)\n", x, y);
+                cells_found += 1;
             }
         }
     }
+    printf("Total cells found: %d\n", cells_found);
 }
 
 int main(int argc, char **argv) {
