@@ -76,6 +76,7 @@ outputs=(
     "impossible/output_5IMPOSSIBLE.BMP"
 )
 
+mkdir outputs
 for ((i=0; i<${#paths[@]}; i++)); do
     command="bin/cell-counter.exe samples/${paths[i]} outputs/${outputs[i]}"
     echo "$command"
