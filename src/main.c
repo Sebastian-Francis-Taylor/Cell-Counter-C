@@ -28,7 +28,7 @@ void add_coordinate(int x, int y) {
         coordinates[coordinates_amount].x = x;
         coordinates[coordinates_amount].y = y;
         coordinates_amount += 1;
-        printf("White pixel detected at window: (%d, %d)\n", x, y);
+        printf("White pixel detected at position: (%d, %d)\n", x, y);
     }
 }
 
@@ -149,6 +149,18 @@ void generate_output_image(unsigned char image[BMP_WIDTH][BMP_HEIGTH]) {
     }
 }
 
+void save_greyscale_image(unsigned char image[BMP_WIDTH][BMP_HEIGTH]) {
+    for (int x = 0; x < BMP_WIDTH; ++x) {
+        for (int y = 0; y < BMP_HEIGTH; ++y) {
+            for (int z = 0; z < BMP_CHANNELS; ++z) {
+                output_image[x][y][z] = image[x][y];
+            }
+        }
+    }
+
+    write_bitmap(output_image, "greyscale_image.bmp");
+}
+
 int main(int argc, char **argv) {
     // argc counts how may arguments are passed
     // argv[0] is a string with the name of the program
@@ -161,20 +173,22 @@ int main(int argc, char **argv) {
         exit(1);
     }
 
-    printf("Cell Counter - Bateman Boys");
+    printf("Cell Counter - Bateman Boys\n");
 
     // Load image from file
     read_bitmap(argv[1], input_image);
     write_bitmap(input_image, "step_0.bmp");
 
     greyscale_bitmap(input_image);
-    apply_threshold(1, greyscale_image);
+    apply_threshold(127, greyscale_image);
+    save_greyscale_image(greyscale_image);
 
-    // Temp loop just for showcase
     for (int i = 0; i < 10; ++i) {
         erode_image(greyscale_image);
         detect_spots(greyscale_image);
     }
+
+    generate_output_image(greyscale_image);
 
     // Save image to file
     write_bitmap(input_image, argv[2]);
