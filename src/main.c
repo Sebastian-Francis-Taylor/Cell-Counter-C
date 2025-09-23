@@ -48,13 +48,8 @@ void invert(unsigned char input_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS], unsi
 }
 
 // Applying the threshold on all pixels
-static void apply_threshold(unsigned int threshold, unsigned char input_image[BMP_WIDTH][BMP_HEIGTH]) {
-    unsigned char output_image[BMP_WIDTH][BMP_HEIGTH];
-    for (int x = 0; x < BMP_WIDTH; ++x) {
-        for (int y = 0; y < BMP_HEIGTH; ++y) {
-            output_image[x][y] = input_image[x][y];
-        }
-    }
+static void apply_threshold(unsigned int threshold, unsigned char input_image[BMP_WIDTH][BMP_HEIGTH], 
+                            unsigned char output_image[BMP_WIDTH][BMP_HEIGTH]) {
     for (int x = 0; x < BMP_WIDTH; ++x) {
         for (int y = 0; y < BMP_HEIGTH; ++y) {
             output_image[x][y] = (input_image[x][y] <= threshold) ? 0 : 255;
@@ -63,13 +58,8 @@ static void apply_threshold(unsigned int threshold, unsigned char input_image[BM
 }
 
 // Eroding the image once
-void erode_image(unsigned char input_image[BMP_WIDTH][BMP_HEIGTH]) {
-    unsigned char output_image[BMP_WIDTH][BMP_HEIGTH];
-    for (int x = 0; x < BMP_WIDTH; ++x) {
-        for (int y = 0; y < BMP_HEIGTH; ++y) {
-            output_image[x][y] = input_image[x][y];
-        }
-    }
+void erode_image(unsigned char input_image[BMP_WIDTH][BMP_HEIGTH],
+                unsigned char output_image[BMP_WIDTH][BMP_HEIGTH]) {
     for (int x = 0; x < BMP_WIDTH; ++x) { // ooof et 4x nested loop, not good :(((
         for (int y = 0; y < BMP_HEIGTH; ++y) {
 
@@ -162,22 +152,30 @@ int main(int argc, char **argv) {
     }
 
     printf("Cell Counter - Bateman Boys");
-
     // Load image from file
     read_bitmap(argv[1], input_image);
     write_bitmap(input_image, "step_0.bmp");
 
     greyscale_bitmap(input_image);
-    apply_threshold(1, greyscale_image);
+
+    // copy to output image
+    unsigned char output_image[BMP_WIDTH][BMP_HEIGTH];
+    for (int x = 0; x < BMP_WIDTH; ++x) {
+        for (int y = 0; y < BMP_HEIGTH; ++y) {
+            output_image[x][y] = input_image[x][y];
+        }
+    }
+
+    apply_threshold(127, greyscale_image, output_image);
 
     // Temp loop just for showcase
     for (int i = 0; i < 10; ++i) {
-        erode_image(greyscale_image);
-        detect_spots(greyscale_image);
+        erode_image(greyscale_image, output_image);
+        detect_spots(output_image);
     }
 
     // Save image to file
-    write_bitmap(input_image, argv[2]);
+    write_bitmap(output_image, argv[2]);
 
     printf("Done!\n");
     return 0;
