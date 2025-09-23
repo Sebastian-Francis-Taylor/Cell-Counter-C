@@ -12,6 +12,26 @@ const int PATTERN[3][3] = {{0, 1, 0}, {1, 1, 1}, {0, 1, 0}};
 #define FALSE 0
 #define SEARCH_WINDOW 14
 
+// change to theoretical max for cells in a 950 x 950 image
+#define MAX_COORDINATES 100
+
+typedef struct {
+    int x;
+    int y;
+} Coordinates;
+
+static Coordinates coordinates[MAX_COORDINATES];
+static int coordinates_amount = 0;
+
+void add_coordinate(int x, int y) {
+    if (coordinates_amount < MAX_COORDINATES) {
+        coordinates[coordinates_amount].x = x;
+        coordinates[coordinates_amount].y = y;
+        coordinates_amount += 1;
+        printf("White pixel detected at window: (%d, %d)\n", x, y);
+    }
+}
+
 // Declaring the array to store the image (unsigned char = unsigned 8 bit)
 static unsigned char input_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS];
 static unsigned char output_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS];
@@ -108,12 +128,25 @@ void detect_spots(unsigned char input_image[BMP_WIDTH][BMP_HEIGTH]) {
     for (int x = 0; x <= BMP_WIDTH - SEARCH_WINDOW; x++) {
         for (int y = 0; y <= BMP_HEIGTH - SEARCH_WINDOW; y++) {
             if (has_white_pixel(input_image, x, y)) {
-                printf("White pixel detected at window: (%d, %d)\n", x, y);
+                add_coordinate(x, y);
                 cells_found += 1;
             }
         }
     }
     printf("Total cells found: %d\n", cells_found);
+}
+
+// functionality: add a red cross at a given coordinate
+void add_cross(int x, int y) {
+    unsigned char cross[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS];
+
+    output_image[x][y][0] = 255;
+}
+
+void generate_output_image(unsigned char image[BMP_WIDTH][BMP_HEIGTH]) {
+    for (int i = 0; i < coordinates_amount; ++i) {
+        add_cross(coordinates[i].x, coordinates[i].y);
+    }
 }
 
 int main(int argc, char **argv) {
@@ -124,7 +157,7 @@ int main(int argc, char **argv) {
 
     // Checking that 2 arguments are passed
     if (argc != 3) {
-        fprintf(stderr, "Usage: %s <output file path> <output file path>\n", argv[0]);
+        fprintf(stderr, "Usage: %s <input file path> <output file path>\n", argv[0]);
         exit(1);
     }
 
@@ -138,13 +171,13 @@ int main(int argc, char **argv) {
     apply_threshold(1, greyscale_image);
 
     // Temp loop just for showcase
-    while (1) {
+    for (int i = 0; i < 10; ++i) {
         erode_image(greyscale_image);
         detect_spots(greyscale_image);
     }
 
     // Save image to file
-    write_bitmap(output_image, argv[2]);
+    write_bitmap(input_image, argv[2]);
 
     printf("Done!\n");
     return 0;
