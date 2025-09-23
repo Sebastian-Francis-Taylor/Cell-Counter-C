@@ -175,7 +175,7 @@ int main(int argc, char **argv) {
     unsigned char output_image[BMP_WIDTH][BMP_HEIGTH];
     for (int x = 0; x < BMP_WIDTH; ++x) {
         for (int y = 0; y < BMP_HEIGTH; ++y) {
-            output_image[x][y] = input_image[x][y];
+            output_image[x][y] = greyscale_image[x][y];
         }
     }
 
