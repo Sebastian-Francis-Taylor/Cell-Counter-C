@@ -13,8 +13,8 @@ const int PATTERN[3][3] = {{0, 1, 0}, {1, 1, 1}, {0, 1, 0}};
 #define SEARCH_WINDOW 14
 
 // Declaring the array to store the image (unsigned char = unsigned 8 bit)
-unsigned char input_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS];
-unsigned char output_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS];
+static unsigned char input_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS];
+static unsigned char output_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS];
 static unsigned char greyscale_image[BMP_WIDTH][BMP_HEIGTH];
 
 void invert(unsigned char input_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS], unsigned char output_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS]) {
@@ -128,7 +128,7 @@ int main(int argc, char **argv) {
         exit(1);
     }
 
-    printf("Example program - 02132 - A1\n");
+    printf("Cell Counter - Bateman Boys");
 
     // Load image from file
     read_bitmap(argv[1], input_image);
