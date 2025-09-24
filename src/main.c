@@ -1,12 +1,13 @@
 #include "cbmp.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 
 #define THRESHOLD 127
 const int PATTERN[3][3] = {{0, 1, 0}, {1, 1, 1}, {0, 1, 0}};
 
 #define PATTERN_SIZE 3 // needs to be odd
-#define PATTERN_CENTER ((PATTERN_SIZE-1)/2)
+#define PATTERN_CENTER ((PATTERN_SIZE - 1) / 2)
 
 #define TRUE 1
 #define FALSE 0
@@ -62,15 +63,15 @@ static void apply_threshold(unsigned int threshold, unsigned char input_image[BM
 }
 
 int clamp(int val, int min, int max) {
-  if(val < min) {
-    return min;
-  }
+    if (val < min) {
+        return min;
+    }
 
-  if(val > max) {
-    return max;
-  }
+    if (val > max) {
+        return max;
+    }
 
-  return val;
+    return val;
 }
 
 // Eroding the image once
@@ -82,12 +83,12 @@ void erode_image(unsigned char input_image[BMP_WIDTH][BMP_HEIGHT], unsigned char
                 for (int _x = 0; x < PATTERN_SIZE; ++x) {
                     for (int _y = 0; y < PATTERN_SIZE; ++y) {
                         if (output_image[x][y] == 0) {
-                            output_image[x][y] = (PATTERN[x+_x-PATTERN_CENTER][y+_y-PATTERN_CENTER] == 1 && input_image[x+_x][y+_y] >= 1) * 255;
+                            output_image[x][y] =
+                                (PATTERN[x + _x - PATTERN_CENTER][y + _y - PATTERN_CENTER] == 1 && input_image[x + _x][y + _y] >= 1) * 255;
                         }
                     }
                 }
-            }
-            else {
+            } else {
                 output_image[x][y] = 0;
             }
         }
