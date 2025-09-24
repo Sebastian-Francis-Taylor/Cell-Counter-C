@@ -6,7 +6,10 @@
 const int PATTERN[3][3] = {{0, 1, 0}, {1, 1, 1}, {0, 1, 0}};
 
 #define PATTERN_SIZE 3 // needs to be odd
-#define PATTERN_CENTER ((PATTERN_SIZE-1)/2)
+#define PATTERN_CENTER ((PATTERN_SIZE-1)/2)+1
+
+#define WHITE 255
+#define BLACK 0
 
 #define TRUE 1
 #define FALSE 0
@@ -61,40 +64,47 @@ static void apply_threshold(unsigned int threshold, unsigned char input_image[BM
     }
 }
 
-int clamp(int val, int min, int max) {
-  if(val < min) {
-    return min;
-  }
+int erode_image(unsigned char input_image[BMP_WIDTH][BMP_HEIGHT], unsigned char output_image[BMP_WIDTH][BMP_HEIGHT]) {
+    int eroded_any = 0; // Track if any pixel was eroded
 
-  if(val > max) {
-    return max;
-  }
-
-  return val;
-}
-
-// Eroding the image once
-void erode_image(unsigned char input_image[BMP_WIDTH][BMP_HEIGHT], unsigned char output_image[BMP_WIDTH][BMP_HEIGHT], int min_neighbours) {
+    // Copy input image to output as default
     for (int x = 0; x < BMP_WIDTH; ++x) {
         for (int y = 0; y < BMP_HEIGHT; ++y) {
+            output_image[x][y] = input_image[x][y];
+        }
+    }
 
-            if (input_image[x][y] != 0) {
-                for (int _x = 0; x < PATTERN_SIZE; ++x) {
-                    for (int _y = 0; y < PATTERN_SIZE; ++y) {
-                        if (output_image[x][y] == 0) {
-                            output_image[x][y] = (PATTERN[x+_x-PATTERN_CENTER][y+_y-PATTERN_CENTER] == 1 && input_image[x+_x][y+_y] >= 1) * 255;
+    // Perform erosion and avoid borders
+    for (int x = 1; x < BMP_WIDTH - 1; ++x) { 
+        for (int y = 1; y < BMP_HEIGHT - 1; ++y) {
+            if (input_image[x][y] == WHITE) {
+                int survives = 1;
+
+                // Check pattern
+                for (int i = -1; i <= 1; ++i) {
+                    for (int j = -1; j <= 1; ++j) {
+                        if (PATTERN[i + 1][j + 1] == 1) {
+                            if (input_image[x + i][y + j] != WHITE) {
+                                survives = 0;
+                                break;
+                            }
                         }
                     }
+                    if (!survives) break;
                 }
-            }
-            else {
-                output_image[x][y] = 0;
+
+                if (!survives) {
+                    output_image[x][y] = BLACK;
+                    eroded_any = 1;
+                }
             }
         }
     }
-    // DEBUG SAVING
-    save_greyscale_image(output_image, "temp/erode_output_image");
+    // return 1 if any pixel was eroded, 0 otherwise
+    return eroded_any; 
 }
+
+
 
 void greyscale_bitmap(unsigned char input_image[BMP_WIDTH][BMP_HEIGHT][BMP_CHANNELS]) {
     for (int x = 0; x < BMP_WIDTH; ++x) {
@@ -212,8 +222,16 @@ int main(int argc, char **argv) {
     apply_threshold(BINARY_THRESHOLD, greyscale_image, binary_image);
     save_greyscale_image(binary_image, "output/stage_0.bmp");
 
+    unsigned char binary_image_2[BMP_WIDTH][BMP_HEIGHT];
+    // copy to binary 2 image
+    for (int x = 0; x < BMP_WIDTH; ++x) {
+        for (int y = 0; y < BMP_HEIGHT; ++y) {
+            binary_image_2[x][y] = binary_image[x][y];
+        }
+    }
+
     for (int i = 1; i <= 10; ++i) {
-        erode_image(binary_image, binary_image);
+        erode_image((i % 2 == 0 ? binary_image : binary_image_2), (i % 2 == 0 ? binary_image_2 : binary_image));
         detect_spots(binary_image);
         char save_path[256];
         snprintf(save_path, sizeof(save_path), "output/stage_%d.bmp", i);
