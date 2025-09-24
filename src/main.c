@@ -14,7 +14,7 @@ const int PATTERN[3][3] = {{0, 1, 0}, {1, 1, 1}, {0, 1, 0}};
 #define BINARY_THRESHOLD 127
 
 // change to theoretical max for cells in a 950 x 950 image
-#define MAX_COORDINATES 100
+#define MAX_COORDINATES 6000
 
 typedef struct {
     int x;
@@ -37,6 +37,7 @@ void add_coordinate(int x, int y) {
 static unsigned char input_image[BMP_WIDTH][BMP_HEIGHT][BMP_CHANNELS];
 static unsigned char output_image[BMP_WIDTH][BMP_HEIGHT][BMP_CHANNELS];
 static unsigned char greyscale_image[BMP_WIDTH][BMP_HEIGHT];
+static unsigned char binary_image[BMP_WIDTH][BMP_HEIGHT];
 
 // Applying the threshold on all pixels
 static void apply_threshold(unsigned int threshold, unsigned char input_image[BMP_WIDTH][BMP_HEIGHT],
@@ -179,15 +180,15 @@ int main(int argc, char **argv) {
         }
     }
 
-    apply_threshold(BINARY_THRESHOLD, greyscale_image, output_image);
-    save_greyscale_image(output_image, "binary_threshold.bmp");
+    apply_threshold(BINARY_THRESHOLD, greyscale_image, binary_image);
+    save_greyscale_image(binary_image, "binary_threshold.bmp");
 
     for (int i = 0; i < 10; ++i) {
-        erode_image(greyscale_image, output_image);
-        detect_spots(output_image);
+        erode_image(binary_image, binary_image);
+        detect_spots(binary_image);
         char save_path[256];
-        snprintf(save_path, sizeof(save_path), "output/stage_%d.png", i);
-        save_greyscale_image(output_image, save_path);
+        snprintf(save_path, sizeof(save_path), "output/stage_%d.bmp", i);
+        save_greyscale_image(binary_image, save_path);
     }
 
     generate_output_image(greyscale_image);
