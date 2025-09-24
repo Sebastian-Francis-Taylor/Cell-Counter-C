@@ -39,6 +39,18 @@ static unsigned char output_image[BMP_WIDTH][BMP_HEIGHT][BMP_CHANNELS];
 static unsigned char greyscale_image[BMP_WIDTH][BMP_HEIGHT];
 static unsigned char binary_image[BMP_WIDTH][BMP_HEIGHT];
 
+void save_greyscale_image(unsigned char image[BMP_WIDTH][BMP_HEIGHT], char *save_path) {
+    for (int x = 0; x < BMP_WIDTH; ++x) {
+        for (int y = 0; y < BMP_HEIGHT; ++y) {
+            for (int z = 0; z < BMP_CHANNELS; ++z) {
+                output_image[x][y][z] = image[x][y];
+            }
+        }
+    }
+
+    write_bitmap(output_image, save_path);
+}
+
 // Applying the threshold on all pixels
 static void apply_threshold(unsigned int threshold, unsigned char input_image[BMP_WIDTH][BMP_HEIGHT],
                             unsigned char output_image[BMP_WIDTH][BMP_HEIGHT]) {
@@ -80,6 +92,8 @@ void erode_image(unsigned char input_image[BMP_WIDTH][BMP_HEIGHT], unsigned char
             }
         }
     }
+    // DEBUG SAVING
+    save_greyscale_image(output_image, "temp/erode_output_image");
 }
 
 void greyscale_bitmap(unsigned char input_image[BMP_WIDTH][BMP_HEIGHT][BMP_CHANNELS]) {
@@ -135,7 +149,6 @@ void detect_spots(unsigned char input_image[BMP_WIDTH][BMP_HEIGHT]) {
         for (int y = 0; y <= BMP_HEIGHT - SEARCH_WINDOW; y++) {
             if (has_white_pixel(input_image, x, y)) {
                 add_coordinate(x, y);
-                // probably using the wrong image in function call
                 remove_spot(input_image, x, y);
                 cells_found += 1;
             }
@@ -144,20 +157,7 @@ void detect_spots(unsigned char input_image[BMP_WIDTH][BMP_HEIGHT]) {
     printf("Total cells found: %d\n", cells_found);
 }
 
-// functionality: add a red cross at a given coordinate
-void add_cross(int x, int y) {
-    unsigned char cross[BMP_WIDTH][BMP_HEIGHT][BMP_CHANNELS];
-
-    output_image[x][y][0] = 255;
-}
-
 void generate_output_image(unsigned char image[BMP_WIDTH][BMP_HEIGHT]) {
-    for (int i = 0; i < coordinates_amount; ++i) {
-        add_cross(coordinates[i].x, coordinates[i].y);
-    }
-}
-
-void save_greyscale_image(unsigned char image[BMP_WIDTH][BMP_HEIGHT], char *save_path) {
     for (int x = 0; x < BMP_WIDTH; ++x) {
         for (int y = 0; y < BMP_HEIGHT; ++y) {
             for (int z = 0; z < BMP_CHANNELS; ++z) {
@@ -166,7 +166,20 @@ void save_greyscale_image(unsigned char image[BMP_WIDTH][BMP_HEIGHT], char *save
         }
     }
 
-    write_bitmap(output_image, save_path);
+    for (int i = 0; i < coordinates_amount; ++i) {
+        int cx = coordinates[i].x;
+        int cy = coordinates[i].y;
+
+        // draws the horizontal line of the +
+        for (int j = -5; j <= 5; j++) {
+            output_image[cx + j][cy][0] = 255; // Red
+        }
+
+        // draws the vertical line of the +
+        for (int j = -5; j <= 5; j++) {
+            output_image[cx][cy + j][0] = 255; // Red
+        }
+    }
 }
 
 int main(int argc, char **argv) {
@@ -190,18 +203,17 @@ int main(int argc, char **argv) {
     greyscale_bitmap(input_image);
 
     // copy to output image
-    unsigned char output_image[BMP_WIDTH][BMP_HEIGHT];
     for (int x = 0; x < BMP_WIDTH; ++x) {
         for (int y = 0; y < BMP_HEIGHT; ++y) {
-            output_image[x][y] = greyscale_image[x][y];
+            binary_image[x][y] = greyscale_image[x][y];
         }
     }
 
     apply_threshold(BINARY_THRESHOLD, greyscale_image, binary_image);
-    save_greyscale_image(binary_image, "binary_threshold.bmp");
+    save_greyscale_image(binary_image, "output/stage_0.bmp");
 
-    for (int i = 0; i < 10; ++i) {
-        erode_image(binary_image, binary_image,1);
+    for (int i = 1; i <= 10; ++i) {
+        erode_image(binary_image, binary_image);
         detect_spots(binary_image);
         char save_path[256];
         snprintf(save_path, sizeof(save_path), "output/stage_%d.bmp", i);
