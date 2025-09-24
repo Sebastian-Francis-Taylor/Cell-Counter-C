@@ -77,6 +77,10 @@ outputs=(
 )
 
 mkdir outputs
+mkdir outputs/easy
+mkdir outputs/medium
+mkdir outputs/hard
+mkdir outputs/impossible
 for ((i=0; i<${#paths[@]}; i++)); do
     command="bin/cell-counter.exe samples/${paths[i]} outputs/${outputs[i]}"
     echo "$command"
