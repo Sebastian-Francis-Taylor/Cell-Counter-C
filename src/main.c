@@ -232,10 +232,10 @@ int main(int argc, char **argv) {
 
     for (int i = 1; i <= 10; ++i) {
         erode_image((i % 2 == 0 ? binary_image : binary_image_2), (i % 2 == 0 ? binary_image_2 : binary_image));
-        detect_spots(binary_image);
+        detect_spots((i % 2 == 0 ? binary_image_2 : binary_image));
         char save_path[256];
         snprintf(save_path, sizeof(save_path), "output/stage_%d.bmp", i);
-        save_greyscale_image(binary_image, save_path);
+        save_greyscale_image((i % 2 == 0 ? binary_image_2 : binary_image), save_path);
     }
 
     generate_output_image(greyscale_image);
