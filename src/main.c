@@ -11,6 +11,7 @@ const int PATTERN[3][3] = {{0, 1, 0}, {1, 1, 1}, {0, 1, 0}};
 #define TRUE 1
 #define FALSE 0
 #define SEARCH_WINDOW 14
+#define BINARY_THRESHOLD 127
 
 // change to theoretical max for cells in a 950 x 950 image
 #define MAX_COORDINATES 100
@@ -36,16 +37,6 @@ void add_coordinate(int x, int y) {
 static unsigned char input_image[BMP_WIDTH][BMP_HEIGHT][BMP_CHANNELS];
 static unsigned char output_image[BMP_WIDTH][BMP_HEIGHT][BMP_CHANNELS];
 static unsigned char greyscale_image[BMP_WIDTH][BMP_HEIGHT];
-
-void invert(unsigned char input_image[BMP_WIDTH][BMP_HEIGHT][BMP_CHANNELS], unsigned char output_image[BMP_WIDTH][BMP_HEIGHT][BMP_CHANNELS]) {
-    for (int x = 0; x < BMP_WIDTH; x++) {
-        for (int y = 0; y < BMP_HEIGHT; y++) {
-            for (int c = 0; c < BMP_CHANNELS; c++) {
-                output_image[x][y][c] = 255 - input_image[x][y][c];
-            }
-        }
-    }
-}
 
 // Applying the threshold on all pixels
 static void apply_threshold(unsigned int threshold, unsigned char input_image[BMP_WIDTH][BMP_HEIGHT],
@@ -104,17 +95,19 @@ int has_white_pixel(unsigned char image[BMP_WIDTH][BMP_HEIGHT], int start_x, int
                     has_pixel_in_interior = 1;
                 }
             }
-
-            if (has_pixel_in_interior && !has_pixel_on_perimeter) {
-                for (int z = 0; z < BMP_CHANNELS; ++z) {
-                    output_image[current_x][current_y][z] = 0;
-                }
-            }
         }
     }
 
     // Return TRUE only if there's a white pixel in interior AND no white pixels on perimeter
     return (has_pixel_in_interior && !has_pixel_on_perimeter) ? TRUE : FALSE;
+}
+
+void remove_spot(unsigned char input_image[BMP_WIDTH][BMP_HEIGHT], int start_x, int start_y) {
+    for (int x = 0; x < SEARCH_WINDOW; ++x) {
+        for (int y = 0; y < SEARCH_WINDOW; ++y) {
+            input_image[start_x + x][start_y + y] = 0;
+        }
+    }
 }
 
 void detect_spots(unsigned char input_image[BMP_WIDTH][BMP_HEIGHT]) {
@@ -124,6 +117,8 @@ void detect_spots(unsigned char input_image[BMP_WIDTH][BMP_HEIGHT]) {
         for (int y = 0; y <= BMP_HEIGHT - SEARCH_WINDOW; y++) {
             if (has_white_pixel(input_image, x, y)) {
                 add_coordinate(x, y);
+                // probably using the wrong image in function call
+                remove_spot(input_image, x, y);
                 cells_found += 1;
             }
         }
@@ -184,7 +179,7 @@ int main(int argc, char **argv) {
         }
     }
 
-    apply_threshold(127, greyscale_image, output_image);
+    apply_threshold(BINARY_THRESHOLD, greyscale_image, output_image);
     save_greyscale_image(output_image, "binary_threshold.bmp");
 
     for (int i = 0; i < 10; ++i) {
