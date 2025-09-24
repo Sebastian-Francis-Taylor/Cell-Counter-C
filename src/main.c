@@ -33,13 +33,13 @@ void add_coordinate(int x, int y) {
 }
 
 // Declaring the array to store the image (unsigned char = unsigned 8 bit)
-static unsigned char input_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS];
-static unsigned char output_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS];
-static unsigned char greyscale_image[BMP_WIDTH][BMP_HEIGTH];
+static unsigned char input_image[BMP_WIDTH][BMP_HEIGHT][BMP_CHANNELS];
+static unsigned char output_image[BMP_WIDTH][BMP_HEIGHT][BMP_CHANNELS];
+static unsigned char greyscale_image[BMP_WIDTH][BMP_HEIGHT];
 
-void invert(unsigned char input_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS], unsigned char output_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS]) {
+void invert(unsigned char input_image[BMP_WIDTH][BMP_HEIGHT][BMP_CHANNELS], unsigned char output_image[BMP_WIDTH][BMP_HEIGHT][BMP_CHANNELS]) {
     for (int x = 0; x < BMP_WIDTH; x++) {
-        for (int y = 0; y < BMP_HEIGTH; y++) {
+        for (int y = 0; y < BMP_HEIGHT; y++) {
             for (int c = 0; c < BMP_CHANNELS; c++) {
                 output_image[x][y][c] = 255 - input_image[x][y][c];
             }
@@ -48,20 +48,19 @@ void invert(unsigned char input_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS], unsi
 }
 
 // Applying the threshold on all pixels
-static void apply_threshold(unsigned int threshold, unsigned char input_image[BMP_WIDTH][BMP_HEIGTH], 
-                            unsigned char output_image[BMP_WIDTH][BMP_HEIGTH]) {
+static void apply_threshold(unsigned int threshold, unsigned char input_image[BMP_WIDTH][BMP_HEIGHT],
+                            unsigned char output_image[BMP_WIDTH][BMP_HEIGHT]) {
     for (int x = 0; x < BMP_WIDTH; ++x) {
-        for (int y = 0; y < BMP_HEIGTH; ++y) {
+        for (int y = 0; y < BMP_HEIGHT; ++y) {
             output_image[x][y] = (input_image[x][y] <= threshold) ? 0 : 255;
         }
     }
 }
 
 // Eroding the image once
-void erode_image(unsigned char input_image[BMP_WIDTH][BMP_HEIGTH],
-                unsigned char output_image[BMP_WIDTH][BMP_HEIGTH]) {
+void erode_image(unsigned char input_image[BMP_WIDTH][BMP_HEIGHT], unsigned char output_image[BMP_WIDTH][BMP_HEIGHT]) {
     for (int x = 0; x < BMP_WIDTH; ++x) { // ooof et 4x nested loop, not good :(((
-        for (int y = 0; y < BMP_HEIGTH; ++y) {
+        for (int y = 0; y < BMP_HEIGHT; ++y) {
 
             if (input_image[x][y] == 0) {
                 for (int _x = 0; x < PATTERN_SIZE; ++x) {
@@ -74,9 +73,9 @@ void erode_image(unsigned char input_image[BMP_WIDTH][BMP_HEIGTH],
     }
 }
 
-void greyscale_bitmap(unsigned char input_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS]) {
+void greyscale_bitmap(unsigned char input_image[BMP_WIDTH][BMP_HEIGHT][BMP_CHANNELS]) {
     for (int x = 0; x < BMP_WIDTH; ++x) {
-        for (int y = 0; y < BMP_HEIGTH; ++y) {
+        for (int y = 0; y < BMP_HEIGHT; ++y) {
             unsigned int channel_sum = 0;
             for (int c = 0; c < BMP_CHANNELS; ++c) {
                 channel_sum += (unsigned int)input_image[x][y][c];
@@ -86,23 +85,29 @@ void greyscale_bitmap(unsigned char input_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANN
     }
 }
 
-int has_white_pixel(unsigned char image[BMP_WIDTH][BMP_HEIGTH], int start_x, int start_y) {
+int has_white_pixel(unsigned char image[BMP_WIDTH][BMP_HEIGHT], int start_x, int start_y) {
     int has_pixel_in_interior = 0;
     int has_pixel_on_perimeter = 0;
 
-    for (int i = 0; i < SEARCH_WINDOW; i++) {
-        for (int j = 0; j < SEARCH_WINDOW; j++) {
-            int current_x = start_x + i;
-            int current_y = start_y + j;
+    for (int x = 0; x < SEARCH_WINDOW; x++) {
+        for (int y = 0; y < SEARCH_WINDOW; y++) {
+            int current_x = start_x + x;
+            int current_y = start_y + y;
 
             // Check if current position is on the perimeter
-            int is_perimeter = (i == 0 || i == SEARCH_WINDOW - 1 || j == 0 || j == SEARCH_WINDOW - 1);
+            int on_perimeter = (x == 0 || x == SEARCH_WINDOW - 1 || y == 0 || y == SEARCH_WINDOW - 1);
 
-            if (image[current_x][current_y] == 1) {
-                if (is_perimeter) {
+            if (image[current_x][current_y] == 255) {
+                if (on_perimeter) {
                     has_pixel_on_perimeter = 1;
                 } else {
                     has_pixel_in_interior = 1;
+                }
+            }
+
+            if (has_pixel_in_interior && !has_pixel_on_perimeter) {
+                for (int z = 0; z < BMP_CHANNELS; ++z) {
+                    output_image[current_x][current_y][z] = 0;
                 }
             }
         }
@@ -112,11 +117,11 @@ int has_white_pixel(unsigned char image[BMP_WIDTH][BMP_HEIGTH], int start_x, int
     return (has_pixel_in_interior && !has_pixel_on_perimeter) ? TRUE : FALSE;
 }
 
-void detect_spots(unsigned char input_image[BMP_WIDTH][BMP_HEIGTH]) {
+void detect_spots(unsigned char input_image[BMP_WIDTH][BMP_HEIGHT]) {
     int cells_found = 0;
     // Stops the search before the array is out of bounds
     for (int x = 0; x <= BMP_WIDTH - SEARCH_WINDOW; x++) {
-        for (int y = 0; y <= BMP_HEIGTH - SEARCH_WINDOW; y++) {
+        for (int y = 0; y <= BMP_HEIGHT - SEARCH_WINDOW; y++) {
             if (has_white_pixel(input_image, x, y)) {
                 add_coordinate(x, y);
                 cells_found += 1;
@@ -128,27 +133,27 @@ void detect_spots(unsigned char input_image[BMP_WIDTH][BMP_HEIGTH]) {
 
 // functionality: add a red cross at a given coordinate
 void add_cross(int x, int y) {
-    unsigned char cross[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS];
+    unsigned char cross[BMP_WIDTH][BMP_HEIGHT][BMP_CHANNELS];
 
     output_image[x][y][0] = 255;
 }
 
-void generate_output_image(unsigned char image[BMP_WIDTH][BMP_HEIGTH]) {
+void generate_output_image(unsigned char image[BMP_WIDTH][BMP_HEIGHT]) {
     for (int i = 0; i < coordinates_amount; ++i) {
         add_cross(coordinates[i].x, coordinates[i].y);
     }
 }
 
-void save_greyscale_image(unsigned char image[BMP_WIDTH][BMP_HEIGTH]) {
+void save_greyscale_image(unsigned char image[BMP_WIDTH][BMP_HEIGHT], char *save_path) {
     for (int x = 0; x < BMP_WIDTH; ++x) {
-        for (int y = 0; y < BMP_HEIGTH; ++y) {
+        for (int y = 0; y < BMP_HEIGHT; ++y) {
             for (int z = 0; z < BMP_CHANNELS; ++z) {
                 output_image[x][y][z] = image[x][y];
             }
         }
     }
 
-    write_bitmap(output_image, "greyscale_image.bmp");
+    write_bitmap(output_image, save_path);
 }
 
 int main(int argc, char **argv) {
@@ -172,25 +177,28 @@ int main(int argc, char **argv) {
     greyscale_bitmap(input_image);
 
     // copy to output image
-    unsigned char output_image[BMP_WIDTH][BMP_HEIGTH];
+    unsigned char output_image[BMP_WIDTH][BMP_HEIGHT];
     for (int x = 0; x < BMP_WIDTH; ++x) {
-        for (int y = 0; y < BMP_HEIGTH; ++y) {
-            output_image[x][y] = input_image[x][y];
+        for (int y = 0; y < BMP_HEIGHT; ++y) {
+            output_image[x][y] = greyscale_image[x][y];
         }
     }
 
     apply_threshold(127, greyscale_image, output_image);
-    save_greyscale_image(output_image);
+    save_greyscale_image(output_image, "binary_threshold.bmp");
 
     for (int i = 0; i < 10; ++i) {
         erode_image(greyscale_image, output_image);
         detect_spots(output_image);
+        char save_path[256];
+        snprintf(save_path, sizeof(save_path), "output/stage_%d.png", i);
+        save_greyscale_image(output_image, save_path);
     }
 
     generate_output_image(greyscale_image);
 
     // Save image to file
-    write_bitmap(output_image, argv[2]);
+    save_greyscale_image(output_image, argv[2]);
 
     printf("Done!\n");
     return 0;

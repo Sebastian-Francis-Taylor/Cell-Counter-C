@@ -1,7 +1,6 @@
 #include "cbmp.h"
 #include <stdio.h>
 #include <stdlib.h>
-
 // Constants
 
 #define BITS_PER_BYTE 8
@@ -75,13 +74,12 @@ void _map(BMP *bmp, void (*f)(BMP *bmp, int, int, int));
 void _get_pixel(BMP *bmp, int index, int offset, int channel);
 
 // Public function implementations
-void read_bitmap(char *input_file_path,
-                 unsigned char output_image_array[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS]) {
+void read_bitmap(char *input_file_path, unsigned char output_image_array[BMP_WIDTH][BMP_HEIGHT][BMP_CHANNELS]) {
     // Read image into BMP struct
     BMP *in_bmp = bopen(input_file_path);
     int width = get_width(in_bmp);
     int height = get_height(in_bmp);
-    if (width != BMP_WIDTH || height != BMP_HEIGTH) {
+    if (width != BMP_WIDTH || height != BMP_HEIGHT) {
         _throw_error("Invalid bitmap width and/or height. Must be 950x950 pixels.");
     }
     if (out_bmp == NULL) {
@@ -92,30 +90,28 @@ void read_bitmap(char *input_file_path,
     unsigned char g;
     unsigned char b;
     for (int x = 0; x < BMP_WIDTH; x++) {
-        for (int y = 0; y < BMP_HEIGTH; y++) {
+        for (int y = 0; y < BMP_HEIGHT; y++) {
             get_pixel_rgb(in_bmp, x, y, &r, &g, &b);
-            output_image_array[x][BMP_HEIGTH - 1 - y][0] = r;
-            output_image_array[x][BMP_HEIGTH - 1 - y][1] = g;
-            output_image_array[x][BMP_HEIGTH - 1 - y][2] = b;
+            output_image_array[x][BMP_HEIGHT - 1 - y][0] = r;
+            output_image_array[x][BMP_HEIGHT - 1 - y][1] = g;
+            output_image_array[x][BMP_HEIGHT - 1 - y][2] = b;
         }
     }
     bclose(in_bmp);
 }
 
-void write_bitmap(unsigned char input_image_array[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS],
-                  char *output_file_path) {
+void write_bitmap(unsigned char input_image_array[BMP_WIDTH][BMP_HEIGHT][BMP_CHANNELS], char *output_file_path) {
     if (out_bmp == NULL) {
-        _throw_error("The function 'read_bitmap' must be called at least once before calling the "
-                     "function 'write_bitmap'.");
+        _throw_error("The function 'read_bitmap' must be called at least once before calling the function 'write_bitmap'.");
     }
     unsigned char r;
     unsigned char g;
     unsigned char b;
     for (int x = 0; x < BMP_WIDTH; x++) {
-        for (int y = 0; y < BMP_HEIGTH; y++) {
-            r = input_image_array[x][BMP_HEIGTH - 1 - y][0];
-            g = input_image_array[x][BMP_HEIGTH - 1 - y][1];
-            b = input_image_array[x][BMP_HEIGTH - 1 - y][2];
+        for (int y = 0; y < BMP_HEIGHT; y++) {
+            r = input_image_array[x][BMP_HEIGHT - 1 - y][0];
+            g = input_image_array[x][BMP_HEIGHT - 1 - y][1];
+            b = input_image_array[x][BMP_HEIGHT - 1 - y][2];
             set_pixel_rgb(out_bmp, x, y, r, g, b);
         }
     }
@@ -167,8 +163,7 @@ BMP *b_deep_copy(BMP *to_copy) {
     copy->height = to_copy->height;
     copy->depth = to_copy->depth;
 
-    copy->file_byte_contents =
-        (unsigned char *)malloc(copy->file_byte_number * sizeof(unsigned char));
+    copy->file_byte_contents = (unsigned char *)malloc(copy->file_byte_number * sizeof(unsigned char));
 
     unsigned int i;
     for (i = 0; i < copy->file_byte_number; i++) {
@@ -268,24 +263,17 @@ unsigned char *_get_file_byte_contents(FILE *fp, unsigned int file_byte_number) 
     return buffer;
 }
 
-int _validate_file_type(unsigned char *file_byte_contents) {
-    return file_byte_contents[0] == 'B' && file_byte_contents[1] == 'M';
-}
+int _validate_file_type(unsigned char *file_byte_contents) { return file_byte_contents[0] == 'B' && file_byte_contents[1] == 'M'; }
 
 int _validate_depth(unsigned int depth) { return depth == 24 || depth == 32; }
 
 unsigned int _get_pixel_array_start(unsigned char *file_byte_contents) {
-    return _get_int_from_buffer(PIXEL_ARRAY_START_BYTES, PIXEL_ARRAY_START_OFFSET,
-                                file_byte_contents);
+    return _get_int_from_buffer(PIXEL_ARRAY_START_BYTES, PIXEL_ARRAY_START_OFFSET, file_byte_contents);
 }
 
-int _get_width(unsigned char *file_byte_contents) {
-    return (int)_get_int_from_buffer(WIDTH_BYTES, WIDTH_OFFSET, file_byte_contents);
-}
+int _get_width(unsigned char *file_byte_contents) { return (int)_get_int_from_buffer(WIDTH_BYTES, WIDTH_OFFSET, file_byte_contents); }
 
-int _get_height(unsigned char *file_byte_contents) {
-    return (int)_get_int_from_buffer(HEIGHT_BYTES, HEIGHT_OFFSET, file_byte_contents);
-}
+int _get_height(unsigned char *file_byte_contents) { return (int)_get_int_from_buffer(HEIGHT_BYTES, HEIGHT_OFFSET, file_byte_contents); }
 
 unsigned int _get_depth(unsigned char *file_byte_contents) {
     if (_get_int_from_buffer(DEPTH_BYTES, DEPTH_OFFSET, file_byte_contents) == 32 ||
@@ -293,8 +281,7 @@ unsigned int _get_depth(unsigned char *file_byte_contents) {
         return _get_int_from_buffer(DEPTH_BYTES, DEPTH_OFFSET, file_byte_contents);
     } else {
         // We are in a windows environment (patch)
-        // printf("%d", (_get_int_from_buffer(DEPTH_BYTES, DEPTH_OFFSET, file_byte_contents)) & 0xFF
-        // );
+        // printf("%d", (_get_int_from_buffer(DEPTH_BYTES, DEPTH_OFFSET, file_byte_contents)) & 0xFF );
         return (_get_int_from_buffer(DEPTH_BYTES, DEPTH_OFFSET, file_byte_contents)) & 0xFF;
     }
 }
@@ -342,8 +329,7 @@ void _map(BMP *bmp, void (*f)(BMP *, int, int, int)) {
 }
 
 void _get_pixel(BMP *bmp, int index, int offset, int channel) {
-    unsigned char value =
-        _get_int_from_buffer(sizeof(unsigned char), offset + channel, bmp->file_byte_contents);
+    unsigned char value = _get_int_from_buffer(sizeof(unsigned char), offset + channel, bmp->file_byte_contents);
     switch (channel) {
     case BLUE:
         bmp->pixels[index].blue = value;
