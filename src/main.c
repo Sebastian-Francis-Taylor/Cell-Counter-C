@@ -6,7 +6,7 @@
 const int PATTERN[3][3] = {{0, 1, 0}, {1, 1, 1}, {0, 1, 0}};
 
 #define PATTERN_SIZE 3 // needs to be odd
-#define PATTERN_CENTER ((PATTERN_SIZE - 1) << 1)
+#define PATTERN_CENTER ((PATTERN_SIZE-1)/2)
 
 #define TRUE 1
 #define FALSE 0
@@ -49,17 +49,34 @@ static void apply_threshold(unsigned int threshold, unsigned char input_image[BM
     }
 }
 
+int clamp(int val, int min, int max) {
+  if(val < min) {
+    return min;
+  }
+
+  if(val > max) {
+    return max;
+  }
+
+  return val;
+}
+
 // Eroding the image once
-void erode_image(unsigned char input_image[BMP_WIDTH][BMP_HEIGHT], unsigned char output_image[BMP_WIDTH][BMP_HEIGHT]) {
-    for (int x = 0; x < BMP_WIDTH; ++x) { // ooof et 4x nested loop, not good :(((
+void erode_image(unsigned char input_image[BMP_WIDTH][BMP_HEIGHT], unsigned char output_image[BMP_WIDTH][BMP_HEIGHT], int min_neighbours) {
+    for (int x = 0; x < BMP_WIDTH; ++x) {
         for (int y = 0; y < BMP_HEIGHT; ++y) {
 
-            if (input_image[x][y] == 0) {
+            if (input_image[x][y] != 0) {
                 for (int _x = 0; x < PATTERN_SIZE; ++x) {
                     for (int _y = 0; y < PATTERN_SIZE; ++y) {
-                        output_image[x][y] = (PATTERN[_x][_y] == 1 && input_image[_x][_y] >= 1) * 255;
+                        if (output_image[x][y] == 0) {
+                            output_image[x][y] = (PATTERN[x+_x-PATTERN_CENTER][y+_y-PATTERN_CENTER] == 1 && input_image[x+_x][y+_y] >= 1) * 255;
+                        }
                     }
                 }
+            }
+            else {
+                output_image[x][y] = 0;
             }
         }
     }
@@ -184,7 +201,7 @@ int main(int argc, char **argv) {
     save_greyscale_image(binary_image, "binary_threshold.bmp");
 
     for (int i = 0; i < 10; ++i) {
-        erode_image(binary_image, binary_image);
+        erode_image(binary_image, binary_image,1);
         detect_spots(binary_image);
         char save_path[256];
         snprintf(save_path, sizeof(save_path), "output/stage_%d.bmp", i);
