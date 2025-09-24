@@ -1,3 +1,7 @@
+# Ignores output files
+/output/
+/outputs/
+
 # Prerequisites
 *.d
 
