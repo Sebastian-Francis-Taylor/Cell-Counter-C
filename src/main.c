@@ -7,7 +7,7 @@
 const int PATTERN[3][3] = {{0, 1, 0}, {1, 1, 1}, {0, 1, 0}};
 
 #define PATTERN_SIZE 3 // needs to be odd
-#define PATTERN_CENTER ((PATTERN_SIZE-1)/2)+1
+#define PATTERN_CENTER ((PATTERN_SIZE - 1) / 2) + 1
 
 #define WHITE 255
 #define BLACK 0
@@ -18,7 +18,7 @@ const int PATTERN[3][3] = {{0, 1, 0}, {1, 1, 1}, {0, 1, 0}};
 #define BINARY_THRESHOLD 127
 
 // change to theoretical max for cells in a 950 x 950 image
-#define MAX_COORDINATES 6000
+#define MAX_COORDINATES 4700
 
 typedef struct {
     int x;
@@ -76,7 +76,7 @@ int erode_image(unsigned char input_image[BMP_WIDTH][BMP_HEIGHT], unsigned char 
     }
 
     // Perform erosion and avoid borders
-    for (int x = 1; x < BMP_WIDTH - 1; ++x) { 
+    for (int x = 1; x < BMP_WIDTH - 1; ++x) {
         for (int y = 1; y < BMP_HEIGHT - 1; ++y) {
             if (input_image[x][y] == WHITE) {
                 int survives = 1;
@@ -102,10 +102,8 @@ int erode_image(unsigned char input_image[BMP_WIDTH][BMP_HEIGHT], unsigned char 
         }
     }
     // return 1 if any pixel was eroded, 0 otherwise
-    return eroded_any; 
+    return eroded_any;
 }
-
-
 
 void greyscale_bitmap(unsigned char input_image[BMP_WIDTH][BMP_HEIGHT][BMP_CHANNELS]) {
     for (int x = 0; x < BMP_WIDTH; ++x) {
@@ -153,7 +151,7 @@ void remove_spot(unsigned char input_image[BMP_WIDTH][BMP_HEIGHT], int start_x, 
     }
 }
 
-void detect_spots(unsigned char input_image[BMP_WIDTH][BMP_HEIGHT]) {
+int detect_spots(unsigned char input_image[BMP_WIDTH][BMP_HEIGHT]) {
     int cells_found = 0;
     // Stops the search before the array is out of bounds
     for (int x = 0; x <= BMP_WIDTH - SEARCH_WINDOW; x++) {
@@ -165,7 +163,7 @@ void detect_spots(unsigned char input_image[BMP_WIDTH][BMP_HEIGHT]) {
             }
         }
     }
-    printf("Total cells found: %d\n", cells_found);
+    return cells_found;
 }
 
 void generate_output_image(unsigned char image[BMP_WIDTH][BMP_HEIGHT]) {
@@ -230,19 +228,22 @@ int main(int argc, char **argv) {
             binary_image_2[x][y] = binary_image[x][y];
         }
     }
-
+    int total_cells = 0;
     for (int i = 1; i <= 10; ++i) {
         erode_image((i % 2 == 0 ? binary_image : binary_image_2), (i % 2 == 0 ? binary_image_2 : binary_image));
-        detect_spots((i % 2 == 0 ? binary_image_2 : binary_image));
+        int cells_found = detect_spots((i % 2 == 0 ? binary_image_2 : binary_image));
+        total_cells += cells_found;
         char save_path[256];
         snprintf(save_path, sizeof(save_path), "output/stage_%d.bmp", i);
         save_greyscale_image((i % 2 == 0 ? binary_image_2 : binary_image), save_path);
     }
 
+    printf("%d cells found in sample image '%s'\n", total_cells, argv[1]);
+
     generate_output_image(greyscale_image);
 
     // Save image to file
-    save_greyscale_image(output_image, argv[2]);
+    // save_greyscale_image(output_image, argv[2]);
 
     printf("Done!\n");
     return 0;
