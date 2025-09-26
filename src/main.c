@@ -55,6 +55,10 @@ void save_greyscale_image(unsigned char image[BMP_WIDTH][BMP_HEIGHT], char *save
     write_bitmap(output_image, save_path);
 }
 
+void save_image(unsigned char image[BMP_WIDTH][BMP_HEIGHT][BMP_CHANNELS], char *save_path) {
+    write_bitmap(image, save_path);
+}
+
 // Applying the threshold on all pixels
 static void apply_threshold(unsigned int threshold, unsigned char input_image[BMP_WIDTH][BMP_HEIGHT],
                             unsigned char output_image[BMP_WIDTH][BMP_HEIGHT]) {
@@ -143,6 +147,20 @@ int has_white_pixel(unsigned char image[BMP_WIDTH][BMP_HEIGHT], int start_x, int
     return (has_pixel_in_interior && !has_pixel_on_perimeter) ? TRUE : FALSE;
 }
 
+void cross(unsigned char input_image[BMP_WIDTH][BMP_HEIGHT][BMP_CHANNELS], Coordinates coordinates[MAX_COORDINATES], unsigned int hypotenuse) {
+    int half_hypotenuse = hypotenuse >> 1;
+    for (int x = 0 ; x < hypotenuse ; ++x) {
+        for (int z = 0 ; z < coordinates_amount ; z++) {
+            input_image[coordinates[z].x+x-half_hypotenuse][coordinates[z].y+x-half_hypotenuse][1] = 0;
+            input_image[coordinates[z].x+x-half_hypotenuse][coordinates[z].y+x-half_hypotenuse][2] = 0;
+            input_image[coordinates[z].x-x+half_hypotenuse][coordinates[z].y+x-half_hypotenuse][1] = 0;
+            input_image[coordinates[z].x-x+half_hypotenuse][coordinates[z].y+x-half_hypotenuse][2] = 0;
+            input_image[coordinates[z].x+x-half_hypotenuse][coordinates[z].y+x-half_hypotenuse][0] = 255;
+            input_image[coordinates[z].x-x+half_hypotenuse][coordinates[z].y+x-half_hypotenuse][0] = 255;
+        }
+    } 
+}
+
 void remove_spot(unsigned char input_image[BMP_WIDTH][BMP_HEIGHT], int start_x, int start_y) {
     for (int x = 0; x < SEARCH_WINDOW; ++x) {
         for (int y = 0; y < SEARCH_WINDOW; ++y) {
@@ -157,7 +175,7 @@ int detect_spots(unsigned char input_image[BMP_WIDTH][BMP_HEIGHT]) {
     for (int x = 0; x <= BMP_WIDTH - SEARCH_WINDOW; x++) {
         for (int y = 0; y <= BMP_HEIGHT - SEARCH_WINDOW; y++) {
             if (has_white_pixel(input_image, x, y)) {
-                add_coordinate(x, y);
+                add_coordinate(x+(SEARCH_WINDOW>>1),y+(SEARCH_WINDOW>>1));
                 remove_spot(input_image, x, y);
                 cells_found += 1;
             }
@@ -167,6 +185,7 @@ int detect_spots(unsigned char input_image[BMP_WIDTH][BMP_HEIGHT]) {
 }
 
 void generate_output_image(unsigned char image[BMP_WIDTH][BMP_HEIGHT]) {
+    // Copy greyscale to RGB
     for (int x = 0; x < BMP_WIDTH; ++x) {
         for (int y = 0; y < BMP_HEIGHT; ++y) {
             for (int z = 0; z < BMP_CHANNELS; ++z) {
@@ -175,21 +194,9 @@ void generate_output_image(unsigned char image[BMP_WIDTH][BMP_HEIGHT]) {
         }
     }
 
-    for (int i = 0; i < coordinates_amount; ++i) {
-        int cx = coordinates[i].x;
-        int cy = coordinates[i].y;
-
-        // draws the horizontal line of the +
-        for (int j = -5; j <= 5; j++) {
-            output_image[cx + j][cy][0] = 255; // Red
-        }
-
-        // draws the vertical line of the +
-        for (int j = -5; j <= 5; j++) {
-            output_image[cx][cy + j][0] = 255; // Red
-        }
-    }
+   cross(output_image,coordinates,25);
 }
+
 
 int main(int argc, char **argv) {
     // argc counts how may arguments are passed
@@ -247,7 +254,7 @@ int main(int argc, char **argv) {
     generate_output_image(greyscale_image);
 
     // Save image to file
-    // save_greyscale_image(output_image, argv[2]);
+    save_image(output_image, argv[2]);
 
     printf("Done!\n");
     return 0;
