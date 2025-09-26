@@ -75,9 +75,9 @@ int erode_image(unsigned char input_image[BMP_WIDTH][BMP_HEIGHT], unsigned char 
         }
     }
 
-    // Perform erosion and avoid borders
-    for (int x = 1; x < BMP_WIDTH - 1; ++x) {
-        for (int y = 1; y < BMP_HEIGHT - 1; ++y) {
+    // Perform erosion
+    for (int x = 0; x < BMP_WIDTH; ++x) {
+        for (int y = 0; y < BMP_HEIGHT; ++y) {
             if (input_image[x][y] == WHITE) {
                 int survives = 1;
 
@@ -231,11 +231,15 @@ int main(int argc, char **argv) {
     int total_cells = 0;
     for (int i = 1; i <= 10; ++i) {
         erode_image((i % 2 == 0 ? binary_image : binary_image_2), (i % 2 == 0 ? binary_image_2 : binary_image));
+        erode_image((i % 2 == 0 ? binary_image : binary_image_2), (i % 2 == 0 ? binary_image_2 : binary_image));
         int cells_found = detect_spots((i % 2 == 0 ? binary_image_2 : binary_image));
         total_cells += cells_found;
         char save_path[256];
         snprintf(save_path, sizeof(save_path), "output/stage_%d.bmp", i);
         save_greyscale_image((i % 2 == 0 ? binary_image_2 : binary_image), save_path);
+        if (cells_found <= 0 && i >= 3) { // optimization
+            break;
+        }
     }
 
     printf("%d cells found in sample image '%s'\n", total_cells, argv[1]);
