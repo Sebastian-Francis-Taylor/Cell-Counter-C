@@ -66,11 +66,10 @@ void save_greyscale_image(unsigned char image[BMP_WIDTH][BMP_HEIGHT], char *save
     }
 
     write_bitmap(output_image, save_path);
+    END_TIMER("save_greyscale_image");
 }
 
-void save_image(unsigned char image[BMP_WIDTH][BMP_HEIGHT][BMP_CHANNELS], char *save_path) {
-    write_bitmap(image, save_path);
-}
+void save_image(unsigned char image[BMP_WIDTH][BMP_HEIGHT][BMP_CHANNELS], char *save_path) { write_bitmap(image, save_path); }
 
 // Applying the threshold on all pixels
 static void apply_threshold(unsigned int threshold, unsigned char input_image[BMP_WIDTH][BMP_HEIGHT],
@@ -168,16 +167,16 @@ int has_white_pixel(unsigned char image[BMP_WIDTH][BMP_HEIGHT], int start_x, int
 
 void cross(unsigned char input_image[BMP_WIDTH][BMP_HEIGHT][BMP_CHANNELS], Coordinates coordinates[MAX_COORDINATES], unsigned int hypotenuse) {
     int half_hypotenuse = hypotenuse >> 1;
-    for (int x = 0 ; x < hypotenuse ; ++x) {
-        for (int z = 0 ; z < coordinates_amount ; z++) {
-            input_image[coordinates[z].x+x-half_hypotenuse][coordinates[z].y+x-half_hypotenuse][1] = 0;
-            input_image[coordinates[z].x+x-half_hypotenuse][coordinates[z].y+x-half_hypotenuse][2] = 0;
-            input_image[coordinates[z].x-x+half_hypotenuse][coordinates[z].y+x-half_hypotenuse][1] = 0;
-            input_image[coordinates[z].x-x+half_hypotenuse][coordinates[z].y+x-half_hypotenuse][2] = 0;
-            input_image[coordinates[z].x+x-half_hypotenuse][coordinates[z].y+x-half_hypotenuse][0] = 255;
-            input_image[coordinates[z].x-x+half_hypotenuse][coordinates[z].y+x-half_hypotenuse][0] = 255;
+    for (int x = 0; x < hypotenuse; ++x) {
+        for (int z = 0; z < coordinates_amount; z++) {
+            input_image[coordinates[z].x + x - half_hypotenuse][coordinates[z].y + x - half_hypotenuse][1] = 0;
+            input_image[coordinates[z].x + x - half_hypotenuse][coordinates[z].y + x - half_hypotenuse][2] = 0;
+            input_image[coordinates[z].x - x + half_hypotenuse][coordinates[z].y + x - half_hypotenuse][1] = 0;
+            input_image[coordinates[z].x - x + half_hypotenuse][coordinates[z].y + x - half_hypotenuse][2] = 0;
+            input_image[coordinates[z].x + x - half_hypotenuse][coordinates[z].y + x - half_hypotenuse][0] = 255;
+            input_image[coordinates[z].x - x + half_hypotenuse][coordinates[z].y + x - half_hypotenuse][0] = 255;
         }
-    } 
+    }
 }
 
 void remove_spot(unsigned char input_image[BMP_WIDTH][BMP_HEIGHT], int start_x, int start_y) {
@@ -195,7 +194,7 @@ int detect_spots(unsigned char input_image[BMP_WIDTH][BMP_HEIGHT]) {
     for (int x = 0; x <= BMP_WIDTH - SEARCH_WINDOW; x++) {
         for (int y = 0; y <= BMP_HEIGHT - SEARCH_WINDOW; y++) {
             if (has_white_pixel(input_image, x, y)) {
-                add_coordinate(x+(SEARCH_WINDOW>>1),y+(SEARCH_WINDOW>>1));
+                add_coordinate(x + (SEARCH_WINDOW >> 1), y + (SEARCH_WINDOW >> 1));
                 remove_spot(input_image, x, y);
                 cells_found += 1;
             }
@@ -216,10 +215,9 @@ void generate_output_image(unsigned char image[BMP_WIDTH][BMP_HEIGHT]) {
         }
     }
 
-   cross(output_image,coordinates,25);
-   END_TIMER("generate_output_image");
+    cross(output_image, coordinates, 25);
+    END_TIMER("generate_output_image");
 }
-
 
 int main(int argc, char **argv) {
     // argc counts how may arguments are passed
