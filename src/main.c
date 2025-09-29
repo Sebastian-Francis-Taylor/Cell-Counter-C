@@ -17,7 +17,7 @@ const int PATTERN[3][3] = {{0, 1, 0}, {1, 1, 1}, {0, 1, 0}};
 #define SEARCH_WINDOW 14
 #define BINARY_THRESHOLD 127
 
-#define MAX_COORDINATES 4700
+#define MAX_COORDINATES 500
 
 #ifdef TIMING
 #define START_TIMER() clock_t timer_start = clock()
