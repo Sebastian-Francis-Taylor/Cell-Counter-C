@@ -1,4 +1,5 @@
 #include "cbmp.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
@@ -15,7 +16,6 @@ const int PATTERN[3][3] = {{0, 1, 0}, {1, 1, 1}, {0, 1, 0}};
 #define TRUE 1
 #define FALSE 0
 #define SEARCH_WINDOW 14
-#define BINARY_THRESHOLD 127
 
 #define MAX_COORDINATES 4700
 
@@ -45,7 +45,7 @@ void add_coordinate(int x, int y) {
         coordinates[coordinates_amount].x = x;
         coordinates[coordinates_amount].y = y;
         coordinates_amount += 1;
-        printf("White pixel detected at position: (%d, %d)\n", x, y);
+        printf("[ LOG ] White pixel detected at position: (%d, %d)\n", x, y);
     }
 }
 
@@ -71,7 +71,52 @@ void save_greyscale_image(unsigned char image[BMP_WIDTH][BMP_HEIGHT], char *save
 
 void save_image(unsigned char image[BMP_WIDTH][BMP_HEIGHT][BMP_CHANNELS], char *save_path) { write_bitmap(image, save_path); }
 
-// Applying the threshold on all pixels
+unsigned int otsu_threshold(unsigned char input_image[BMP_WIDTH][BMP_HEIGHT]) {
+    unsigned int histogram[256] = {0};
+    // step 1, create histogram
+    for (int x = 0; x < BMP_WIDTH; ++x) {
+        for (int y = 0; y < BMP_HEIGHT; ++y) {
+            histogram[input_image[x][y]]++;
+        }
+    }
+
+    // step 2, sum the intensities and count pixels
+    unsigned int pixels_sum = 0;
+    for (int i = 0; i <= 255; ++i) {
+        pixels_sum += i * histogram[i];
+    }
+
+    // step 3, initialise variables
+    float max_variance = 0.0f;
+    unsigned int optimal_threshold = 0;
+    unsigned int background_count = 0;
+    unsigned int background_sum = 0;
+    unsigned int total_pixels = BMP_HEIGHT * BMP_WIDTH;
+
+    // step 4, go through potential thresholds
+    for (int i = 0; i <= 255; ++i) {
+        background_count = background_count + histogram[i];
+        background_sum = background_sum + i * histogram[i];
+
+        unsigned int foreground_count = total_pixels - background_count;
+        if (background_count == 0 || foreground_count == 0) {
+            continue;
+        }
+
+        float background_mean = (float)background_sum / (float)background_count;
+        float foreground_mean = (float)(pixels_sum - background_sum) / (float)foreground_count;
+
+        float variance =
+            (float)background_count * (float)foreground_count * ((background_mean - foreground_mean) * (background_mean - foreground_mean));
+        if (variance > max_variance) {
+            max_variance = variance;
+            optimal_threshold = i;
+        }
+    }
+
+    return optimal_threshold;
+}
+
 static void apply_threshold(unsigned int threshold, unsigned char input_image[BMP_WIDTH][BMP_HEIGHT],
                             unsigned char output_image[BMP_WIDTH][BMP_HEIGHT]) {
     START_TIMER();
@@ -247,7 +292,9 @@ int main(int argc, char **argv) {
         }
     }
 
-    apply_threshold(BINARY_THRESHOLD, greyscale_image, binary_image);
+    unsigned int binary_threshold = otsu_threshold(greyscale_image);
+    printf("[ DEBUG ] binary_threshold (otsu_threshold) = %d\n", binary_threshold);
+    apply_threshold(binary_threshold, greyscale_image, binary_image);
     save_greyscale_image(binary_image, "output/stage_0.bmp");
 
     unsigned char binary_image_2[BMP_WIDTH][BMP_HEIGHT];
@@ -261,15 +308,14 @@ int main(int argc, char **argv) {
     int total_cells = 0;
     for (int i = 1; i <= 10; ++i) {
         erode_image((i % 2 == 0 ? binary_image : binary_image_2), (i % 2 == 0 ? binary_image_2 : binary_image));
-        erode_image((i % 2 == 0 ? binary_image : binary_image_2), (i % 2 == 0 ? binary_image_2 : binary_image));
         int cells_found = detect_spots((i % 2 == 0 ? binary_image_2 : binary_image));
         total_cells += cells_found;
         char save_path[256];
         snprintf(save_path, sizeof(save_path), "output/stage_%d.bmp", i);
         save_greyscale_image((i % 2 == 0 ? binary_image_2 : binary_image), save_path);
-        if (cells_found <= 0 && i >= 3) { // optimization
-            break;
-        }
+        // if (cells_found <= 0 && i >= 3) { // optimization
+        // break;
+        // }
     }
 
     printf("%d cells found in sample image '%s'\n", total_cells, argv[1]);
