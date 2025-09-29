@@ -12,6 +12,8 @@ const int PATTERN[3][3] = {{0, 1, 0}, {1, 1, 1}, {0, 1, 0}};
 #define WHITE 255
 #define BLACK 0
 
+#define CROSS_HYPOTENUSE 20
+
 #define TRUE 1
 #define FALSE 0
 #define SEARCH_WINDOW 14
@@ -215,7 +217,7 @@ void generate_output_image(unsigned char image[BMP_WIDTH][BMP_HEIGHT]) {
         }
     }
 
-    cross(output_image, coordinates, 25);
+    cross(output_image, coordinates, CROSS_HYPOTENUSE);
     END_TIMER("generate_output_image");
 }
 
