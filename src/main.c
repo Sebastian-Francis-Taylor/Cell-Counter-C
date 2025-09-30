@@ -26,7 +26,7 @@ const int PATTERN[3][3] = {{0, 1, 0}, {1, 1, 1}, {0, 1, 0}};
     do {                                                                                                                                             \
         clock_t timer_end = clock();                                                                                                                 \
         double cpu_time = ((double)(timer_end - timer_start)) / CLOCKS_PER_SEC;                                                                      \
-        printf("[ TIME ] %s took %f seconds\n", label, cpu_time);                                                                                    \
+        printf("[ %-5s ] %s took %f seconds\n", "TIME", label, cpu_time);                                                                            \
     } while (0)
 #else
 #define START_TIMER()
@@ -46,7 +46,7 @@ void add_coordinate(int x, int y) {
         coordinates[coordinates_amount].x = x;
         coordinates[coordinates_amount].y = y;
         coordinates_amount += 1;
-        printf("[ LOG ] White pixel detected at position: (%d, %d)\n", x, y);
+        printf("[ %-5s ] White pixel detected at position: (%d, %d)\n", "LOG", x, y);
     }
 }
 
@@ -129,8 +129,7 @@ static void apply_threshold(unsigned int threshold, unsigned char input_image[BM
     END_TIMER("apply_threshold");
 }
 
-int erode_image(unsigned char input_image[BMP_WIDTH][BMP_HEIGHT],
-                unsigned char output_image[BMP_WIDTH][BMP_HEIGHT]) {
+int erode_image(unsigned char input_image[BMP_WIDTH][BMP_HEIGHT], unsigned char output_image[BMP_WIDTH][BMP_HEIGHT]) {
     START_TIMER();
     int eroded_any = 0;
 
@@ -161,8 +160,7 @@ int erode_image(unsigned char input_image[BMP_WIDTH][BMP_HEIGHT],
                     int ny = y + offsets[k][1];
 
                     // border check
-                    if (nx < 0 || ny < 0 || nx >= BMP_WIDTH || ny >= BMP_HEIGHT
-                        || input_image[nx][ny] != WHITE) {
+                    if (nx < 0 || ny < 0 || nx >= BMP_WIDTH || ny >= BMP_HEIGHT || input_image[nx][ny] != WHITE) {
                         survives = 0;
                         break;
                     }
@@ -183,8 +181,6 @@ int erode_image(unsigned char input_image[BMP_WIDTH][BMP_HEIGHT],
     END_TIMER("erode_image");
     return eroded_any;
 }
-
-
 
 void greyscale_bitmap(unsigned char input_image[BMP_WIDTH][BMP_HEIGHT][BMP_CHANNELS]) {
     START_TIMER();
@@ -309,7 +305,7 @@ int main(int argc, char **argv) {
     }
 
     unsigned int binary_threshold = otsu_threshold(greyscale_image);
-    printf("[ DEBUG ] binary_threshold (otsu_threshold) = %d\n", binary_threshold);
+    printf("[ %-5s ] binary_threshold (otsu_threshold) = %d\n", "DEBUG", binary_threshold);
     apply_threshold(binary_threshold, greyscale_image, binary_image);
     save_greyscale_image(binary_image, "output/stage_0.bmp");
 
