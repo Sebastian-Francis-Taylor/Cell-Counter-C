@@ -2,6 +2,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <time.h>
 
 #define THRESHOLD 127
@@ -60,8 +61,9 @@ void save_greyscale_image(unsigned char image[BMP_WIDTH][BMP_HEIGHT], char *save
     START_TIMER();
     for (int x = 0; x < BMP_WIDTH; ++x) {
         for (int y = 0; y < BMP_HEIGHT; ++y) {
+            unsigned char pixel = image[x][y]; // stores the pixel so it doesn't need to be read 3 times in loop below
             for (int z = 0; z < BMP_CHANNELS; ++z) {
-                output_image[x][y][z] = image[x][y];
+                output_image[x][y][z] = pixel; // Use stored pixel
             }
         }
     }
@@ -222,16 +224,29 @@ int has_white_pixel(unsigned char image[BMP_WIDTH][BMP_HEIGHT], int start_x, int
     return (has_pixel_in_interior && !has_pixel_on_perimeter) ? TRUE : FALSE;
 }
 
-void cross(unsigned char input_image[BMP_WIDTH][BMP_HEIGHT][BMP_CHANNELS], Coordinates coordinates[MAX_COORDINATES], unsigned int hypotenuse) {
+void cross(unsigned char image[BMP_WIDTH][BMP_HEIGHT][BMP_CHANNELS], Coordinates coordinates[MAX_COORDINATES], unsigned int hypotenuse) {
     int half_hypotenuse = hypotenuse >> 1;
-    for (int x = 0; x < hypotenuse; ++x) {
-        for (int z = 0; z < coordinates_amount; z++) {
-            input_image[coordinates[z].x + x - half_hypotenuse][coordinates[z].y + x - half_hypotenuse][1] = 0;
-            input_image[coordinates[z].x + x - half_hypotenuse][coordinates[z].y + x - half_hypotenuse][2] = 0;
-            input_image[coordinates[z].x - x + half_hypotenuse][coordinates[z].y + x - half_hypotenuse][1] = 0;
-            input_image[coordinates[z].x - x + half_hypotenuse][coordinates[z].y + x - half_hypotenuse][2] = 0;
-            input_image[coordinates[z].x + x - half_hypotenuse][coordinates[z].y + x - half_hypotenuse][0] = 255;
-            input_image[coordinates[z].x - x + half_hypotenuse][coordinates[z].y + x - half_hypotenuse][0] = 255;
+
+    for (int z = 0; z < coordinates_amount; z++) {
+        for (int x = 0; x < hypotenuse; ++x) {
+            int x1 = coordinates[z].x + x - half_hypotenuse;
+            int y1 = coordinates[z].y + x - half_hypotenuse;
+            int x2 = coordinates[z].x - x + half_hypotenuse;
+            int y2 = coordinates[z].y + x - half_hypotenuse;
+
+            // Draws first diagonal (\)
+            if (x1 >= 0 && x1 < BMP_WIDTH && y1 >= 0 && y1 < BMP_HEIGHT) {
+                image[x1][y1][0] = 255; // Red
+                image[x1][y1][1] = 0;
+                image[x1][y1][2] = 0;
+            }
+
+            // Draws second diagonal (/)
+            if (x2 >= 0 && x2 < BMP_WIDTH && y2 >= 0 && y2 < BMP_HEIGHT) {
+                image[x2][y2][0] = 255; // Red
+                image[x2][y2][1] = 0;
+                image[x2][y2][2] = 0;
+            }
         }
     }
 }
@@ -267,12 +282,12 @@ void generate_output_image(unsigned char image[BMP_WIDTH][BMP_HEIGHT]) {
     for (int x = 0; x < BMP_WIDTH; ++x) {
         for (int y = 0; y < BMP_HEIGHT; ++y) {
             for (int z = 0; z < BMP_CHANNELS; ++z) {
-                output_image[x][y][z] = image[x][y];
+                input_image[x][y][z] = image[x][y];
             }
         }
     }
 
-    cross(output_image, coordinates, CROSS_HYPOTENUSE);
+    cross(input_image, coordinates, CROSS_HYPOTENUSE);
     END_TIMER("generate_output_image");
 }
 
@@ -293,16 +308,8 @@ int main(int argc, char **argv) {
     // Load image from file
     read_bitmap(argv[1], input_image);
 
-    write_bitmap(input_image, "step_0.bmp");
-
     greyscale_bitmap(input_image);
-
-    // copy to output image
-    for (int x = 0; x < BMP_WIDTH; ++x) {
-        for (int y = 0; y < BMP_HEIGHT; ++y) {
-            binary_image[x][y] = greyscale_image[x][y];
-        }
-    }
+    save_greyscale_image(greyscale_image, "greyscale_image.bmp");
 
     unsigned int binary_threshold = otsu_threshold(greyscale_image);
     printf("[ %-5s ] binary_threshold (otsu_threshold) = %d\n", "DEBUG", binary_threshold);
@@ -311,11 +318,7 @@ int main(int argc, char **argv) {
 
     unsigned char binary_image_2[BMP_WIDTH][BMP_HEIGHT];
     // copy to binary 2 image
-    for (int x = 0; x < BMP_WIDTH; ++x) {
-        for (int y = 0; y < BMP_HEIGHT; ++y) {
-            binary_image_2[x][y] = binary_image[x][y];
-        }
-    }
+    memcpy(binary_image_2, binary_image, sizeof(binary_image));
 
     int total_cells = 0;
     for (int i = 1; i <= 10; ++i) {
@@ -325,17 +328,19 @@ int main(int argc, char **argv) {
         char save_path[256];
         snprintf(save_path, sizeof(save_path), "output/stage_%d.bmp", i);
         save_greyscale_image((i % 2 == 0 ? binary_image_2 : binary_image), save_path);
-        // if (cells_found <= 0 && i >= 3) { // optimization
-        // break;
-        // }
+        if (cells_found <= 0 && i >= 3) { // early break if no more cells are found
+            break;
+        }
     }
 
     printf("%d cells found in sample image '%s'\n", total_cells, argv[1]);
 
+    write_bitmap(input_image, "pre_output.bmp");
     generate_output_image(greyscale_image);
+    write_bitmap(input_image, "post_output.bmp");
 
     // Save image to file
-    save_image(output_image, argv[2]);
+    write_bitmap(input_image, argv[2]);
 
     printf("Done!\n");
     return 0;
