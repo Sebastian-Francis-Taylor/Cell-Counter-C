@@ -8,7 +8,6 @@
 const int PATTERN[3][3] = {{0, 1, 0}, {1, 1, 1}, {0, 1, 0}};
 
 #define PATTERN_SIZE 3 // needs to be odd
-#define PATTERN_CENTER ((PATTERN_SIZE - 1) / 2) + 1
 
 #define WHITE 255
 #define BLACK 0
@@ -130,36 +129,45 @@ static void apply_threshold(unsigned int threshold, unsigned char input_image[BM
     END_TIMER("apply_threshold");
 }
 
-int erode_image(unsigned char input_image[BMP_WIDTH][BMP_HEIGHT], unsigned char output_image[BMP_WIDTH][BMP_HEIGHT]) {
+int erode_image(unsigned char input_image[BMP_WIDTH][BMP_HEIGHT],
+                unsigned char output_image[BMP_WIDTH][BMP_HEIGHT]) {
     START_TIMER();
     int eroded_any = 0;
 
-    // Finding Pattern Offsets
-    int offsets[9][2];
+    const int R = PATTERN_SIZE / 2;
+
+    // Finding pattern offsets
+    int offsets[PATTERN_SIZE * PATTERN_SIZE][2];
     int n_offsets = 0;
-    for (int i = -1; i <= 1; ++i) {
-        for (int j = -1; j <= 1; ++j) {
-            if (PATTERN[i+1][j+1]) {
-                offsets[n_offsets][0] = i;
-                offsets[n_offsets][1] = j;
+    for (int i = 0; i < PATTERN_SIZE; ++i) {
+        for (int j = 0; j < PATTERN_SIZE; ++j) {
+            if (PATTERN[i][j]) {
+                offsets[n_offsets][0] = i - R;
+                offsets[n_offsets][1] = j - R;
                 n_offsets++;
             }
         }
     }
 
-    // Erode image + skip borders
-    for (int x = 1; x < BMP_WIDTH-1; ++x) {
-        for (int y = 1; y < BMP_HEIGHT-1; ++y) {
+    // erode image
+    for (int x = 0; x < BMP_WIDTH; ++x) {
+        for (int y = 0; y < BMP_HEIGHT; ++y) {
+
             if (input_image[x][y] == WHITE) {
                 int survives = 1;
+
                 for (int k = 0; k < n_offsets; ++k) {
                     int nx = x + offsets[k][0];
                     int ny = y + offsets[k][1];
-                    if (input_image[nx][ny] != WHITE) {
+
+                    // border check
+                    if (nx < 0 || ny < 0 || nx >= BMP_WIDTH || ny >= BMP_HEIGHT
+                        || input_image[nx][ny] != WHITE) {
                         survives = 0;
                         break;
                     }
                 }
+
                 if (!survives) {
                     output_image[x][y] = BLACK;
                     eroded_any = 1;
@@ -175,6 +183,7 @@ int erode_image(unsigned char input_image[BMP_WIDTH][BMP_HEIGHT], unsigned char 
     END_TIMER("erode_image");
     return eroded_any;
 }
+
 
 
 void greyscale_bitmap(unsigned char input_image[BMP_WIDTH][BMP_HEIGHT][BMP_CHANNELS]) {
