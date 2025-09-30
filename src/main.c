@@ -25,7 +25,7 @@ const int PATTERN[3][3] = {{0, 1, 0}, {1, 1, 1}, {0, 1, 0}};
     do {                                                                                                                                             \
         clock_t timer_end = clock();                                                                                                                 \
         double cpu_time = ((double)(timer_end - timer_start)) / CLOCKS_PER_SEC;                                                                      \
-        printf("%s took %f seconds\n", label, cpu_time);                                                                                             \
+        printf("[ TIME ] %s took %f seconds\n", label, cpu_time);                                                                                    \
     } while (0)
 #else
 #define START_TIMER()
