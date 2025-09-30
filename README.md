@@ -18,11 +18,11 @@ Instructions here, when we are ready
 - [x] (5pt) Convert to grayscale
 - [x] (5pt) Apply binary threshold
 - [x] (10pt) Erode Image
-- [ ] (10pt) Detect Spots (cells)
-- [ ] (10pt) Generate output image
+- [x] (10pt) Detect Spots (cells)
+- [x] (10pt) Generate output image
 - [ ] (5pt) Print results
-- [ ] (15pt) Functional test
-- [ ] (5pt) Execution time analysis
+- [x] (15pt) Functional test
+- [x] (5pt) Execution time analysis
 - [ ] (5pt) Memory use analysis
 - [ ] (25pt) Optimizations and enhancements (including testing)
 - [ ] (5pt) Report 
