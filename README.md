@@ -29,7 +29,7 @@ Instructions here, when we are ready
 
 ## Optimizations and enhancement
 - [x] Dynamic calculation of the threshold for the generation of the binary image. As previously mentioned, understanding and investigating the Otsu’s method is a good starting point.
-- [ ] Efficient and optimized erosion and spot detection implementation.
+- [x] Efficient and optimized erosion and spot detection implementation.
 - [ ] Using different size and placements of ones of the structuring element for the erosion.
 - [ ] Using different size and shape for the detection area and exclusion frame for the spot detection.
 - [ ] Adapting the algorithm to improve performance or detection ratio.
