@@ -21,8 +21,9 @@ const int PATTERN[3][3] = {{0, 1, 0}, {1, 1, 1}, {0, 1, 0}};
 #define SEARCH_WINDOW 14
 
 #define MAX_COORDINATES 4700
-#define MAX_SPOT_SIZE 1000
+#define MAX_SPOT_SIZE 100
 #define MIN_SPOT_SIZE 5
+#define FLOOD_FILL_BUFFER 1000
 
 #ifdef TIMING
 #define START_TIMER() clock_t timer_start = clock()
@@ -30,7 +31,7 @@ const int PATTERN[3][3] = {{0, 1, 0}, {1, 1, 1}, {0, 1, 0}};
     do {                                                                                                                                             \
         clock_t timer_end = clock();                                                                                                                 \
         double cpu_time = ((double)(timer_end - timer_start)) / CLOCKS_PER_SEC;                                                                      \
-        printf("[ %-5s ] %s took %f seconds\n", "TIME", label, cpu_time);                                                                            \
+        printf("[ %-5s ] %s took %.3f ms\n", "TIME", label, cpu_time * 1000.0);                                                                      \
     } while (0)
 #else
 #define START_TIMER()
@@ -86,6 +87,7 @@ void save_greyscale_image(unsigned char image[BMP_WIDTH][BMP_HEIGHT], char *save
 void save_image(unsigned char image[BMP_WIDTH][BMP_HEIGHT][BMP_CHANNELS], char *save_path) { write_bitmap(image, save_path); }
 
 unsigned int otsu_threshold(unsigned char input_image[BMP_WIDTH][BMP_HEIGHT]) {
+    START_TIMER();
     unsigned int histogram[256] = {0};
     // step 1, create histogram
     for (int x = 0; x < BMP_WIDTH; ++x) {
@@ -128,6 +130,7 @@ unsigned int otsu_threshold(unsigned char input_image[BMP_WIDTH][BMP_HEIGHT]) {
         }
     }
 
+    END_TIMER("otsu_threshold");
     return optimal_threshold;
 }
 
@@ -264,8 +267,8 @@ void cross(unsigned char image[BMP_WIDTH][BMP_HEIGHT][BMP_CHANNELS], Coordinates
 
 int flood_fill(unsigned char image[BMP_WIDTH][BMP_HEIGHT], int start_x, int start_y, unsigned char visited[BMP_WIDTH][BMP_HEIGHT],
                int *pixel_x_coords, int *pixel_y_coords) {
-    int queue_x[MAX_SPOT_SIZE];
-    int queue_y[MAX_SPOT_SIZE];
+    int queue_x[FLOOD_FILL_BUFFER];
+    int queue_y[FLOOD_FILL_BUFFER];
     int queue_head = 0;
     int queue_tail = 0;
 
@@ -308,7 +311,6 @@ int flood_fill(unsigned char image[BMP_WIDTH][BMP_HEIGHT], int start_x, int star
             }
         }
     }
-
     return pixel_count;
 }
 
@@ -358,8 +360,8 @@ int detect_spots(unsigned char input_image[BMP_WIDTH][BMP_HEIGHT]) {
 
     int cells_found = 0;
     // Arrays to store pixel coordinates for a single spot
-    int pixel_x[MAX_SPOT_SIZE];
-    int pixel_y[MAX_SPOT_SIZE];
+    int pixel_x[FLOOD_FILL_BUFFER];
+    int pixel_y[FLOOD_FILL_BUFFER];
 
     for (int x = 0; x < BMP_WIDTH; x++) {
         for (int y = 0; y < BMP_HEIGHT; y++) {
