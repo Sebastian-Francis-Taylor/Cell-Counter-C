@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <strings.h>
 #include <time.h>
 
 #define THRESHOLD 127
@@ -427,17 +428,17 @@ int main(int argc, char **argv) {
 
     int total_cells = 0;
     // potential optimisation: get rid of ternerary for detect_spots and save_greyscale_image and combine into one computation
-    for (int i = 1; i <= 10; ++i) {
-        erode_image((i % 2 == 0 ? binary_image : binary_image_2), (i % 2 == 0 ? binary_image_2 : binary_image));
-        int cells_found = detect_spots((i % 2 == 0 ? binary_image_2 : binary_image));
+    int index = 0;
+    int eroded_any = FALSE;
+    do {
+        eroded_any = erode_image((index % 2 == 0 ? binary_image : binary_image_2), (index % 2 == 0 ? binary_image_2 : binary_image));
+        int cells_found = detect_spots((index % 2 == 0 ? binary_image_2 : binary_image));
         total_cells += cells_found;
         char save_path[256];
-        snprintf(save_path, sizeof(save_path), "output/stage_%d.bmp", i);
-        save_greyscale_image((i % 2 == 0 ? binary_image_2 : binary_image), save_path);
-        if (cells_found <= 0 && i >= 3) { // early break if no more cells are found
-            break;
-        }
-    }
+        snprintf(save_path, sizeof(save_path), "output/stage_%d.bmp", index);
+        save_greyscale_image((index % 2 == 0 ? binary_image_2 : binary_image), save_path);
+        index++;
+    } while (eroded_any);
 
     print_coordinate();
     printf("%d cells found in sample image '%s'\n", total_cells, argv[1]);
