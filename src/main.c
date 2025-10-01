@@ -7,7 +7,7 @@
 #include <time.h>
 
 #define THRESHOLD 127
-const int PATTERN[3][3] = {{0, 1, 0}, {1, 1, 1}, {0, 1, 0}};
+const int PATTERN[3][3] = {{1, 1, 1}, {1, 1, 1}, {1, 1, 1}};
 
 #define PATTERN_SIZE 3 // needs to be odd
 
