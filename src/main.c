@@ -47,6 +47,13 @@ void add_coordinate(int x, int y) {
         coordinates[coordinates_amount].x = x;
         coordinates[coordinates_amount].y = y;
         coordinates_amount += 1;
+    }
+}
+
+void print_coordinate() {
+    for (int i = 0; i < coordinates_amount; ++i) {
+        int x = coordinates[i].x;
+        int y = coordinates[i].y;
         printf("[ %-5s ] White pixel detected at position: (%d, %d)\n", "LOG", x, y);
     }
 }
@@ -192,7 +199,7 @@ void greyscale_bitmap(unsigned char input_image[BMP_WIDTH][BMP_HEIGHT][BMP_CHANN
             for (int c = 0; c < BMP_CHANNELS; ++c) {
                 channel_sum += (unsigned int)input_image[x][y][c];
             }
-            greyscale_image[x][y] = channel_sum / BMP_CHANNELS;
+            greyscale_image[x][y] = channel_sum >> 2;
         }
     }
     END_TIMER("greyscale_bitmap");
@@ -321,6 +328,7 @@ int main(int argc, char **argv) {
     memcpy(binary_image_2, binary_image, sizeof(binary_image));
 
     int total_cells = 0;
+    // potential optimisation: get rid of ternerary for detect_spots and save_greyscale_image and combine into one computation
     for (int i = 1; i <= 10; ++i) {
         erode_image((i % 2 == 0 ? binary_image : binary_image_2), (i % 2 == 0 ? binary_image_2 : binary_image));
         int cells_found = detect_spots((i % 2 == 0 ? binary_image_2 : binary_image));
@@ -333,11 +341,9 @@ int main(int argc, char **argv) {
         }
     }
 
+    print_coordinate();
     printf("%d cells found in sample image '%s'\n", total_cells, argv[1]);
-
-    write_bitmap(input_image, "pre_output.bmp");
     generate_output_image(greyscale_image);
-    write_bitmap(input_image, "post_output.bmp");
 
     // Save image to file
     write_bitmap(input_image, argv[2]);
