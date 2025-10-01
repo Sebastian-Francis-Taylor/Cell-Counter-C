@@ -20,6 +20,8 @@ const int PATTERN[3][3] = {{0, 1, 0}, {1, 1, 1}, {0, 1, 0}};
 #define SEARCH_WINDOW 14
 
 #define MAX_COORDINATES 4700
+#define MAX_SPOT_SIZE 1000
+#define MIN_SPOT_SIZE 5
 
 #ifdef TIMING
 #define START_TIMER() clock_t timer_start = clock()
@@ -63,6 +65,7 @@ static unsigned char input_image[BMP_WIDTH][BMP_HEIGHT][BMP_CHANNELS];
 static unsigned char output_image[BMP_WIDTH][BMP_HEIGHT][BMP_CHANNELS];
 static unsigned char greyscale_image[BMP_WIDTH][BMP_HEIGHT];
 static unsigned char binary_image[BMP_WIDTH][BMP_HEIGHT];
+static unsigned char visited[BMP_WIDTH][BMP_HEIGHT];
 
 void save_greyscale_image(unsigned char image[BMP_WIDTH][BMP_HEIGHT], char *save_path) {
     START_TIMER();
@@ -258,27 +261,123 @@ void cross(unsigned char image[BMP_WIDTH][BMP_HEIGHT][BMP_CHANNELS], Coordinates
     }
 }
 
-void remove_spot(unsigned char input_image[BMP_WIDTH][BMP_HEIGHT], int start_x, int start_y) {
-    for (int x = 0; x < SEARCH_WINDOW; ++x) {
-        for (int y = 0; y < SEARCH_WINDOW; ++y) {
-            input_image[start_x + x][start_y + y] = 0;
+int flood_fill(unsigned char image[BMP_WIDTH][BMP_HEIGHT], int start_x, int start_y, unsigned char visited[BMP_WIDTH][BMP_HEIGHT],
+               int *pixel_x_coords, int *pixel_y_coords) {
+    int queue_x[MAX_SPOT_SIZE];
+    int queue_y[MAX_SPOT_SIZE];
+    int queue_head = 0;
+    int queue_tail = 0;
+
+    int pixel_count = 0;
+
+    queue_x[queue_tail] = start_x;
+    queue_y[queue_tail] = start_y;
+    queue_tail += 1;
+
+    visited[start_x][start_y] = TRUE;
+
+    while (queue_head < queue_tail) {
+        int current_x = queue_x[queue_head];
+        int current_y = queue_y[queue_head];
+        queue_head += 1;
+
+        pixel_x_coords[pixel_count] = current_x;
+        pixel_y_coords[pixel_count] = current_y;
+        pixel_count += 1;
+
+        // check the neighbours
+        int dx[4] = {0, 1, 0, -1};
+        int dy[4] = {1, 0, -1, 0};
+
+        for (int i = 0; i < 4; ++i) {
+            int neighbour_x = current_x + dx[i];
+            int neighbour_y = current_y + dy[i];
+
+            // check if neighbours are in bounds before reading
+            int bound_x = (neighbour_x >= 0 && neighbour_x < BMP_WIDTH);
+            int bound_y = (neighbour_y >= 0 && neighbour_y < BMP_HEIGHT);
+
+            if (bound_x && bound_y) {
+                if (!visited[neighbour_x][neighbour_y] && image[neighbour_x][neighbour_y] == 255) {
+                    visited[neighbour_x][neighbour_y] = TRUE;
+                    queue_x[queue_tail] = neighbour_x;
+                    queue_y[queue_tail] = neighbour_y;
+                    queue_tail++;
+                }
+            }
         }
+    }
+
+    return pixel_count;
+}
+
+int valid_spot(int *x_coords, int *y_coords, int pixel_count) {
+    if ((pixel_count < MIN_SPOT_SIZE) || (pixel_count > MAX_SPOT_SIZE)) {
+        return FALSE;
+    }
+
+    for (int i = 0; i < pixel_count; ++i) {
+        int x = x_coords[i];
+        int y = y_coords[i];
+
+        // check if the pixel is on the perimeter
+        if ((x == 0) || (x == BMP_WIDTH - 1) || (y == 0) || (y == BMP_HEIGHT - 1)) {
+            return FALSE;
+        }
+    }
+    return TRUE;
+}
+
+void calculate_centroid(int *pixel_x_coords, int *pixel_y_coords, int pixel_count, int *center_x, int *center_y) {
+    int sum_x = 0;
+    int sum_y = 0;
+
+    for (int i = 0; i < pixel_count; ++i) {
+        sum_x += pixel_x_coords[i];
+        sum_y += pixel_y_coords[i];
+    }
+    *center_x = sum_x / pixel_count;
+    *center_y = sum_y / pixel_count;
+}
+
+void remove_spot(unsigned char image[BMP_WIDTH][BMP_HEIGHT], int *pixel_x_coords, int *pixel_y_coords, int pixel_count) {
+    for (int i = 0; i < pixel_count; ++i) {
+        int x = pixel_x_coords[i];
+        int y = pixel_y_coords[i];
+
+        image[x][y] = BLACK;
     }
 }
 
 int detect_spots(unsigned char input_image[BMP_WIDTH][BMP_HEIGHT]) {
     START_TIMER();
+
+    // set visited to zero to avoid suprises
+    memset(visited, 0, sizeof(visited));
+
     int cells_found = 0;
-    // Stops the search before the array is out of bounds
-    for (int x = 0; x <= BMP_WIDTH - SEARCH_WINDOW; x++) {
-        for (int y = 0; y <= BMP_HEIGHT - SEARCH_WINDOW; y++) {
-            if (has_white_pixel(input_image, x, y)) {
-                add_coordinate(x + (SEARCH_WINDOW >> 1), y + (SEARCH_WINDOW >> 1));
-                remove_spot(input_image, x, y);
-                cells_found += 1;
+    // Arrays to store pixel coordinates for a single spot
+    int pixel_x[MAX_SPOT_SIZE];
+    int pixel_y[MAX_SPOT_SIZE];
+
+    for (int x = 0; x < BMP_WIDTH; x++) {
+        for (int y = 0; y < BMP_HEIGHT; y++) {
+            // Found an unvisited white pixel
+            if (input_image[x][y] == 255 && visited[x][y] == 0) {
+                // Flood fill to find all connected pixels
+                int pixel_count = flood_fill(input_image, x, y, visited, pixel_x, pixel_y);
+
+                if (valid_spot(pixel_x, pixel_y, pixel_count)) {
+                    int center_x, center_y;
+                    calculate_centroid(pixel_x, pixel_y, pixel_count, &center_x, &center_y);
+                    add_coordinate(center_x, center_y);
+                    remove_spot(input_image, pixel_x, pixel_y, pixel_count);
+                    cells_found++;
+                }
             }
         }
     }
+
     END_TIMER("detect_spots");
     return cells_found;
 }
@@ -316,7 +415,6 @@ int main(int argc, char **argv) {
     read_bitmap(argv[1], input_image);
 
     greyscale_bitmap(input_image);
-    save_greyscale_image(greyscale_image, "greyscale_image.bmp");
 
     unsigned int binary_threshold = otsu_threshold(greyscale_image);
     printf("[ %-5s ] binary_threshold (otsu_threshold) = %d\n", "DEBUG", binary_threshold);
