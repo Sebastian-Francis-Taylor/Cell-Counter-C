@@ -24,7 +24,7 @@ const int PATTERN[3][3] = {{0, 1, 0}, {1, 1, 1}, {0, 1, 0}};
 #define MAX_COORDINATES 4700
 #define MAX_SPOT_SIZE 100
 #define MIN_SPOT_SIZE 5
-#define FLOOD_FILL_BUFFER 1000
+#define FLOOD_FILL_BUFFER 10000
 
 #ifdef TIMING
 #define START_TIMER() clock_t timer_start = clock()
