@@ -212,32 +212,6 @@ void greyscale_bitmap(unsigned char input_image[BMP_WIDTH][BMP_HEIGHT][BMP_CHANN
     END_TIMER("greyscale_bitmap");
 }
 
-int has_white_pixel(unsigned char image[BMP_WIDTH][BMP_HEIGHT], int start_x, int start_y) {
-    int has_pixel_in_interior = 0;
-    int has_pixel_on_perimeter = 0;
-
-    for (int x = 0; x < SEARCH_WINDOW; x++) {
-        for (int y = 0; y < SEARCH_WINDOW; y++) {
-            int current_x = start_x + x;
-            int current_y = start_y + y;
-
-            // Check if current position is on the perimeter
-            int on_perimeter = (x == 0 || x == SEARCH_WINDOW - 1 || y == 0 || y == SEARCH_WINDOW - 1);
-
-            if (image[current_x][current_y] == 255) {
-                if (on_perimeter) {
-                    has_pixel_on_perimeter = 1;
-                } else {
-                    has_pixel_in_interior = 1;
-                }
-            }
-        }
-    }
-
-    // Return TRUE only if there's a white pixel in interior AND no white pixels on perimeter
-    return (has_pixel_in_interior && !has_pixel_on_perimeter) ? TRUE : FALSE;
-}
-
 void cross(unsigned char image[BMP_WIDTH][BMP_HEIGHT][BMP_CHANNELS], Coordinates coordinates[MAX_COORDINATES], unsigned int hypotenuse) {
     int half_hypotenuse = hypotenuse >> 1;
 
