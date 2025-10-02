@@ -54,6 +54,12 @@ void add_coordinate(int x, int y) {
     }
 }
 
+// Declaring the array to store the image (unsigned char = unsigned 8 bit)
+static unsigned char input_image[BMP_WIDTH][BMP_HEIGHT][BMP_CHANNELS];
+static unsigned char greyscale_image[BMP_WIDTH][BMP_HEIGHT];
+static unsigned char binary_image[BMP_WIDTH][BMP_HEIGHT];
+static unsigned char visited[BMP_WIDTH][BMP_HEIGHT];
+
 void print_coordinate() {
     for (int i = 0; i < coordinates_amount; ++i) {
         int x = coordinates[i].x;
@@ -62,25 +68,18 @@ void print_coordinate() {
     }
 }
 
-// Declaring the array to store the image (unsigned char = unsigned 8 bit)
-static unsigned char input_image[BMP_WIDTH][BMP_HEIGHT][BMP_CHANNELS];
-static unsigned char output_image[BMP_WIDTH][BMP_HEIGHT][BMP_CHANNELS];
-static unsigned char greyscale_image[BMP_WIDTH][BMP_HEIGHT];
-static unsigned char binary_image[BMP_WIDTH][BMP_HEIGHT];
-static unsigned char visited[BMP_WIDTH][BMP_HEIGHT];
-
 void save_greyscale_image(unsigned char image[BMP_WIDTH][BMP_HEIGHT], char *save_path) {
     START_TIMER();
     for (int x = 0; x < BMP_WIDTH; ++x) {
         for (int y = 0; y < BMP_HEIGHT; ++y) {
             unsigned char pixel = image[x][y]; // stores the pixel so it doesn't need to be read 3 times in loop below
             for (int z = 0; z < BMP_CHANNELS; ++z) {
-                output_image[x][y][z] = pixel; // Use stored pixel
+                input_image[x][y][z] = pixel; // Use stored pixel
             }
         }
     }
 
-    write_bitmap(output_image, save_path);
+    write_bitmap(input_image, save_path);
     END_TIMER("save_greyscale_image");
 }
 
