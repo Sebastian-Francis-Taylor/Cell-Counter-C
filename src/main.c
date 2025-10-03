@@ -59,8 +59,6 @@ void add_coordinate(int x, int y) {
     }
 }
 
-static unsigned char visited[BMP_WIDTH][BMP_HEIGHT];
-
 void print_coordinate() {
     for (int i = 0; i < coordinates_amount; ++i) {
         int x = coordinates[i].x;
@@ -330,6 +328,7 @@ void remove_spot(unsigned char image[BMP_WIDTH][BMP_HEIGHT], int *pixel_x_coords
 int detect_spots(unsigned char input_image[BMP_WIDTH][BMP_HEIGHT]) {
     START_TIMER();
 
+    unsigned char visited[BMP_WIDTH][BMP_HEIGHT];
     // set visited to zero to avoid suprises
     memset(visited, 0, sizeof(visited));
 
