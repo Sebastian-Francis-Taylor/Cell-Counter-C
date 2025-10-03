@@ -207,7 +207,7 @@ void greyscale_bitmap(unsigned char input_image[BMP_WIDTH][BMP_HEIGHT][BMP_CHANN
             for (int c = 0; c < BMP_CHANNELS; ++c) {
                 channel_sum += (unsigned int)input_image[x][y][c];
             }
-            greyscale_image[x][y] = channel_sum >> 2;
+            greyscale_image[x][y] = channel_sum >> 2; // bitshift by 4 instead of div by 3
         }
     }
     END_TIMER("greyscale_bitmap");
