@@ -1,5 +1,6 @@
 #include "cbmp.h"
 
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -7,7 +8,7 @@
 #include <time.h>
 
 #define THRESHOLD 127
-const int PATTERN[3][3] = {{1, 1, 1}, {1, 1, 1}, {1, 1, 1}};
+const int PATTERN[3][3] = {{0, 1, 0}, {1, 1, 1}, {0, 1, 0}};
 
 #define PATTERN_SIZE 3 // needs to be odd
 
@@ -23,7 +24,7 @@ const int PATTERN[3][3] = {{1, 1, 1}, {1, 1, 1}, {1, 1, 1}};
 #define MAX_COORDINATES 4700
 #define MAX_SPOT_SIZE 100
 #define MIN_SPOT_SIZE 5
-#define FLOOD_FILL_BUFFER 1000
+#define FLOOD_FILL_BUFFER 10000
 
 #ifdef TIMING
 #define START_TIMER() clock_t timer_start = clock()
@@ -46,6 +47,10 @@ typedef struct {
 static Coordinates coordinates[MAX_COORDINATES];
 static int coordinates_amount = 0;
 
+// Declaring image arrays
+static unsigned char input_image[BMP_WIDTH][BMP_HEIGHT][BMP_CHANNELS];
+static unsigned char greyscale_image[BMP_WIDTH][BMP_HEIGHT];
+
 void add_coordinate(int x, int y) {
     if (coordinates_amount < MAX_COORDINATES) {
         coordinates[coordinates_amount].x = x;
@@ -62,25 +67,19 @@ void print_coordinate() {
     }
 }
 
-// Declaring the array to store the image (unsigned char = unsigned 8 bit)
-static unsigned char input_image[BMP_WIDTH][BMP_HEIGHT][BMP_CHANNELS];
-static unsigned char output_image[BMP_WIDTH][BMP_HEIGHT][BMP_CHANNELS];
-static unsigned char greyscale_image[BMP_WIDTH][BMP_HEIGHT];
-static unsigned char binary_image[BMP_WIDTH][BMP_HEIGHT];
-static unsigned char visited[BMP_WIDTH][BMP_HEIGHT];
-
 void save_greyscale_image(unsigned char image[BMP_WIDTH][BMP_HEIGHT], char *save_path) {
     START_TIMER();
+    unsigned char saved_image[BMP_WIDTH][BMP_HEIGHT][BMP_CHANNELS];
     for (int x = 0; x < BMP_WIDTH; ++x) {
         for (int y = 0; y < BMP_HEIGHT; ++y) {
             unsigned char pixel = image[x][y]; // stores the pixel so it doesn't need to be read 3 times in loop below
             for (int z = 0; z < BMP_CHANNELS; ++z) {
-                output_image[x][y][z] = pixel; // Use stored pixel
+                saved_image[x][y][z] = pixel; // Use stored pixel
             }
         }
     }
 
-    write_bitmap(output_image, save_path);
+    write_bitmap(saved_image, save_path);
     END_TIMER("save_greyscale_image");
 }
 
@@ -139,7 +138,7 @@ static void apply_threshold(unsigned int threshold, unsigned char input_image[BM
     START_TIMER();
     for (int x = 0; x < BMP_WIDTH; ++x) {
         for (int y = 0; y < BMP_HEIGHT; ++y) {
-            output_image[x][y] = (input_image[x][y] <= threshold) ? 0 : 255;
+            input_image[x][y] = (input_image[x][y] <= threshold) ? 0 : 255;
         }
     }
     END_TIMER("apply_threshold");
@@ -206,36 +205,10 @@ void greyscale_bitmap(unsigned char input_image[BMP_WIDTH][BMP_HEIGHT][BMP_CHANN
             for (int c = 0; c < BMP_CHANNELS; ++c) {
                 channel_sum += (unsigned int)input_image[x][y][c];
             }
-            greyscale_image[x][y] = channel_sum >> 2;
+            greyscale_image[x][y] = channel_sum >> 2; // bitshift by 4 instead of div by 3
         }
     }
     END_TIMER("greyscale_bitmap");
-}
-
-int has_white_pixel(unsigned char image[BMP_WIDTH][BMP_HEIGHT], int start_x, int start_y) {
-    int has_pixel_in_interior = 0;
-    int has_pixel_on_perimeter = 0;
-
-    for (int x = 0; x < SEARCH_WINDOW; x++) {
-        for (int y = 0; y < SEARCH_WINDOW; y++) {
-            int current_x = start_x + x;
-            int current_y = start_y + y;
-
-            // Check if current position is on the perimeter
-            int on_perimeter = (x == 0 || x == SEARCH_WINDOW - 1 || y == 0 || y == SEARCH_WINDOW - 1);
-
-            if (image[current_x][current_y] == 255) {
-                if (on_perimeter) {
-                    has_pixel_on_perimeter = 1;
-                } else {
-                    has_pixel_in_interior = 1;
-                }
-            }
-        }
-    }
-
-    // Return TRUE only if there's a white pixel in interior AND no white pixels on perimeter
-    return (has_pixel_in_interior && !has_pixel_on_perimeter) ? TRUE : FALSE;
 }
 
 void cross(unsigned char image[BMP_WIDTH][BMP_HEIGHT][BMP_CHANNELS], Coordinates coordinates[MAX_COORDINATES], unsigned int hypotenuse) {
@@ -355,6 +328,7 @@ void remove_spot(unsigned char image[BMP_WIDTH][BMP_HEIGHT], int *pixel_x_coords
 int detect_spots(unsigned char input_image[BMP_WIDTH][BMP_HEIGHT]) {
     START_TIMER();
 
+    unsigned char visited[BMP_WIDTH][BMP_HEIGHT];
     // set visited to zero to avoid suprises
     memset(visited, 0, sizeof(visited));
 
@@ -421,30 +395,32 @@ int main(int argc, char **argv) {
 
     unsigned int binary_threshold = otsu_threshold(greyscale_image);
     printf("[ %-5s ] binary_threshold (otsu_threshold) = %d\n", "DEBUG", binary_threshold);
-    apply_threshold(binary_threshold, greyscale_image, binary_image);
-    save_greyscale_image(binary_image, "output/stage_0.bmp");
+    apply_threshold(binary_threshold, greyscale_image, greyscale_image);
+    save_greyscale_image(greyscale_image, "output/stage_0.bmp");
 
-    unsigned char binary_image_2[BMP_WIDTH][BMP_HEIGHT];
+    unsigned char greyscale_image_2[BMP_WIDTH][BMP_HEIGHT];
     // copy to binary 2 image
-    memcpy(binary_image_2, binary_image, sizeof(binary_image));
+    memcpy(greyscale_image_2, greyscale_image, sizeof(greyscale_image));
 
     int total_cells = 0;
     // potential optimisation: get rid of ternerary for detect_spots and save_greyscale_image and combine into one computation
     int index = 0;
     int eroded_any = FALSE;
     do {
-        eroded_any = erode_image((index % 2 == 0 ? binary_image : binary_image_2), (index % 2 == 0 ? binary_image_2 : binary_image));
-        int cells_found = detect_spots((index % 2 == 0 ? binary_image_2 : binary_image));
+        eroded_any = erode_image((index % 2 == 0 ? greyscale_image : greyscale_image_2), (index % 2 == 0 ? greyscale_image_2 : greyscale_image));
+        int cells_found = detect_spots((index % 2 == 0 ? greyscale_image_2 : greyscale_image));
         total_cells += cells_found;
         char save_path[256];
         snprintf(save_path, sizeof(save_path), "output/stage_%d.bmp", index);
-        save_greyscale_image((index % 2 == 0 ? binary_image_2 : binary_image), save_path);
+        save_greyscale_image((index % 2 == 0 ? greyscale_image_2 : greyscale_image), save_path);
         index++;
     } while (eroded_any);
 
     print_coordinate();
     printf("%d cells found in sample image '%s'\n", total_cells, argv[1]);
-    generate_output_image(greyscale_image);
+    // generate_output_image(greyscale_image);
+
+    cross(input_image, coordinates, CROSS_HYPOTENUSE);
 
     // Save image to file
     write_bitmap(input_image, argv[2]);
