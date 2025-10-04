@@ -1,4 +1,6 @@
 #include "cbmp.h"
+#include "priority_queue.h"
+#include "watershed.h"
 
 #include <stdint.h>
 #include <stdio.h>
@@ -16,7 +18,7 @@
 #define SEARCH_WINDOW 14
 
 #define MAX_COORDINATES 4700
-#define MAX_SPOT_SIZE 100
+#define MAX_SPOT_SIZE 150
 #define MIN_SPOT_SIZE 5
 #define FLOOD_FILL_BUFFER 10000
 
@@ -53,61 +55,6 @@ void add_coordinate(int x, int y) {
     }
 }
 
-void distance_transform(unsigned char input[BMP_WIDTH][BMP_HEIGHT], int distance[BMP_WIDTH][BMP_HEIGHT]) {
-    const int INF = BMP_WIDTH + BMP_HEIGHT;
-    for (int x = 0; x < BMP_WIDTH; ++x) {
-        for (int y = 0; y < BMP_HEIGHT; ++y) {
-            distance[x][y] = (input[x][y] == WHITE) ? INF : 0;
-        }
-    }
-
-    // Forward pass
-    for (int x = 0; x < BMP_WIDTH; ++x) {
-        for (int y = 0; y < BMP_HEIGHT; ++y) {
-            if (distance[x][y] == 0) continue;
-            int min_dist = distance[x][y];
-            if (x > 0) min_dist = distance[x-1][y] + 1 < min_dist ? distance[x-1][y] + 1 : min_dist;
-            if (y > 0) min_dist = distance[x][y-1] + 1 < min_dist ? distance[x][y-1] + 1 : min_dist;
-            distance[x][y] = min_dist;
-        }
-    }
-
-    // Backward pass
-    for (int x = BMP_WIDTH-1; x >= 0; --x) {
-        for (int y = BMP_HEIGHT-1; y >= 0; --y) {
-            if (distance[x][y] == 0) continue;
-            int min_dist = distance[x][y];
-            if (x + 1 < BMP_WIDTH) min_dist = distance[x+1][y] + 1 < min_dist ? distance[x+1][y] + 1 : min_dist;
-            if (y + 1 < BMP_HEIGHT) min_dist = distance[x][y+1] + 1 < min_dist ? distance[x][y+1] + 1 : min_dist;
-            distance[x][y] = min_dist;
-        }
-    }
-}
-
-
-int watershed_erode(unsigned char input[BMP_WIDTH][BMP_HEIGHT], unsigned char output[BMP_WIDTH][BMP_HEIGHT]) {
-    static int distance[BMP_WIDTH][BMP_HEIGHT]; 
-
-    distance_transform(input, distance);
-
-    int eroded_any = 0;
-
-    for (int x = 0; x < BMP_WIDTH; ++x) {
-        for (int y = 0; y < BMP_HEIGHT; ++y) {
-            if (input[x][y] == WHITE && distance[x][y] <= 1) {
-                output[x][y] = BLACK;
-                eroded_any = 1;
-            } else {
-                output[x][y] = input[x][y];
-            }
-        }
-    }
-
-    return eroded_any;
-}
-
-
-
 void print_coordinate() {
     for (int i = 0; i < coordinates_amount; ++i) {
         int x = coordinates[i].x;
@@ -117,24 +64,17 @@ void print_coordinate() {
 }
 
 void save_greyscale_image(unsigned char image[BMP_WIDTH][BMP_HEIGHT], char *save_path) {
-    // Allocate memory for BMP_WIDTH x BMP_HEIGHT x BMP_CHANNELS
-    unsigned char (*saved_image)[BMP_HEIGHT][BMP_CHANNELS] = malloc(sizeof(unsigned char[BMP_WIDTH][BMP_HEIGHT][BMP_CHANNELS]));
-    if (!saved_image) {
-        fprintf(stderr, "[ERROR] Could not allocate memory for saved_image\n");
-        return;
-    }
-
+    START_TIMER();
     for (int x = 0; x < BMP_WIDTH; ++x) {
         for (int y = 0; y < BMP_HEIGHT; ++y) {
-            unsigned char pixel = image[x][y];
             for (int z = 0; z < BMP_CHANNELS; ++z) {
-                saved_image[x][y][z] = pixel;
+                input_image[x][y][z] = image[x][y];
             }
         }
     }
 
-    write_bitmap(saved_image, save_path); // type now matches
-    free(saved_image);
+    write_bitmap(input_image, save_path);
+    END_TIMER("save_greyscale_image");
 }
 
 void save_image(unsigned char image[BMP_WIDTH][BMP_HEIGHT][BMP_CHANNELS], char *save_path) { write_bitmap(image, save_path); }
@@ -345,6 +285,9 @@ int detect_spots(unsigned char input_image[BMP_WIDTH][BMP_HEIGHT]) {
                 // Flood fill to find all connected pixels
                 int pixel_count = flood_fill(input_image, x, y, visited, pixel_x, pixel_y);
 
+                if (pixel_count < MIN_SPOT_SIZE || pixel_count > MAX_SPOT_SIZE) {
+                    printf("Rejected spot: size=%d\n", pixel_count);
+                }
                 if (valid_spot(pixel_x, pixel_y, pixel_count)) {
                     int center_x, center_y;
                     calculate_centroid(pixel_x, pixel_y, pixel_count, &center_x, &center_y);
@@ -404,12 +347,10 @@ int main(int argc, char **argv) {
     memcpy(greyscale_image_2, greyscale_image, sizeof(greyscale_image));
 
     int total_cells = 0;
-    // potential optimisation: get rid of ternerary for detect_spots and save_greyscale_image and combine into one computation
     int index = 0;
     int eroded_any = FALSE;
     do {
-        eroded_any = watershed_erode((index % 2 == 0 ? greyscale_image : greyscale_image_2),
-                             (index % 2 == 0 ? greyscale_image_2 : greyscale_image));
+        eroded_any = watershed_erode((index % 2 == 0 ? greyscale_image : greyscale_image_2), (index % 2 == 0 ? greyscale_image_2 : greyscale_image));
         int cells_found = detect_spots((index % 2 == 0 ? greyscale_image_2 : greyscale_image));
         total_cells += cells_found;
         char save_path[256];
@@ -420,7 +361,7 @@ int main(int argc, char **argv) {
 
     print_coordinate();
     printf("%d cells found in sample image '%s'\n", total_cells, argv[1]);
-    // generate_output_image(greyscale_image);
+    generate_output_image(greyscale_image);
 
     cross(input_image, coordinates, CROSS_HYPOTENUSE);
 

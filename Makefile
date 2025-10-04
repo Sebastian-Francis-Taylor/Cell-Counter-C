@@ -5,7 +5,7 @@ TIMING_CFLAGS = -Wall -O3 -DTIMING -I./src
 SRC_DIR = src
 BUILD_DIR = build
 BIN_DIR = bin
-SRCS = $(SRC_DIR)/main.c $(SRC_DIR)/cbmp.c
+SRCS = $(SRC_DIR)/main.c $(SRC_DIR)/cbmp.c $(SRC_DIR)/priority_queue.c $(SRC_DIR)/watershed.c
 OBJS = $(SRCS:$(SRC_DIR)/%.c=$(BUILD_DIR)/%.o)
 DEBUG_OBJS = $(SRCS:$(SRC_DIR)/%.c=$(BUILD_DIR)/%_debug.o)
 TIMING_OBJS = $(SRCS:$(SRC_DIR)/%.c=$(BUILD_DIR)/%_timing.o)
