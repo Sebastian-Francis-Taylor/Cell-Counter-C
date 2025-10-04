@@ -6,11 +6,6 @@
 #include <string.h>
 #include <time.h>
 
-#define THRESHOLD 127
-const int PATTERN[3][3] = {{0, 1, 0}, {1, 1, 1}, {0, 1, 0}};
-
-#define PATTERN_SIZE 3 // needs to be odd
-
 #define WHITE 255
 #define BLACK 0
 
