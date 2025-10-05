@@ -1,5 +1,4 @@
 #include "cbmp.h"
-#include "priority_queue.h"
 #include "watershed.h"
 
 #include <stdint.h>
