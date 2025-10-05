@@ -6,6 +6,11 @@
 #include <string.h>
 #include <time.h>
 
+#define THRESHOLD 127
+const int PATTERN[3][3] = {{0, 1, 0}, {1, 1, 1}, {0, 1, 0}};
+
+#define PATTERN_SIZE 3 // needs to be odd
+
 #define WHITE 255
 #define BLACK 0
 
@@ -52,61 +57,6 @@ void add_coordinate(int x, int y) {
         coordinates_amount += 1;
     }
 }
-
-void distance_transform(unsigned char input[BMP_WIDTH][BMP_HEIGHT], int distance[BMP_WIDTH][BMP_HEIGHT]) {
-    const int INF = BMP_WIDTH + BMP_HEIGHT;
-    for (int x = 0; x < BMP_WIDTH; ++x) {
-        for (int y = 0; y < BMP_HEIGHT; ++y) {
-            distance[x][y] = (input[x][y] == WHITE) ? INF : 0;
-        }
-    }
-
-    // Forward pass
-    for (int x = 0; x < BMP_WIDTH; ++x) {
-        for (int y = 0; y < BMP_HEIGHT; ++y) {
-            if (distance[x][y] == 0) continue;
-            int min_dist = distance[x][y];
-            if (x > 0) min_dist = distance[x-1][y] + 1 < min_dist ? distance[x-1][y] + 1 : min_dist;
-            if (y > 0) min_dist = distance[x][y-1] + 1 < min_dist ? distance[x][y-1] + 1 : min_dist;
-            distance[x][y] = min_dist;
-        }
-    }
-
-    // Backward pass
-    for (int x = BMP_WIDTH-1; x >= 0; --x) {
-        for (int y = BMP_HEIGHT-1; y >= 0; --y) {
-            if (distance[x][y] == 0) continue;
-            int min_dist = distance[x][y];
-            if (x + 1 < BMP_WIDTH) min_dist = distance[x+1][y] + 1 < min_dist ? distance[x+1][y] + 1 : min_dist;
-            if (y + 1 < BMP_HEIGHT) min_dist = distance[x][y+1] + 1 < min_dist ? distance[x][y+1] + 1 : min_dist;
-            distance[x][y] = min_dist;
-        }
-    }
-}
-
-
-int watershed_erode(unsigned char input[BMP_WIDTH][BMP_HEIGHT], unsigned char output[BMP_WIDTH][BMP_HEIGHT]) {
-    static int distance[BMP_WIDTH][BMP_HEIGHT]; 
-
-    distance_transform(input, distance);
-
-    int eroded_any = 0;
-
-    for (int x = 0; x < BMP_WIDTH; ++x) {
-        for (int y = 0; y < BMP_HEIGHT; ++y) {
-            if (input[x][y] == WHITE && distance[x][y] <= 1) {
-                output[x][y] = BLACK;
-                eroded_any = 1;
-            } else {
-                output[x][y] = input[x][y];
-            }
-        }
-    }
-
-    return eroded_any;
-}
-
-
 
 void print_coordinate() {
     for (int i = 0; i < coordinates_amount; ++i) {
@@ -196,6 +146,59 @@ static void apply_threshold(unsigned int threshold, unsigned char input_image[BM
         }
     }
     END_TIMER("apply_threshold");
+}
+
+int erode_image(unsigned char input_image[BMP_WIDTH][BMP_HEIGHT], unsigned char output_image[BMP_WIDTH][BMP_HEIGHT]) {
+    START_TIMER();
+    int eroded_any = 0;
+
+    const int R = PATTERN_SIZE / 2;
+
+    // Finding pattern offsets
+    int offsets[PATTERN_SIZE * PATTERN_SIZE][2];
+    int n_offsets = 0;
+    for (int i = 0; i < PATTERN_SIZE; ++i) {
+        for (int j = 0; j < PATTERN_SIZE; ++j) {
+            if (PATTERN[i][j]) {
+                offsets[n_offsets][0] = i - R;
+                offsets[n_offsets][1] = j - R;
+                n_offsets++;
+            }
+        }
+    }
+
+    // erode image
+    for (int x = 0; x < BMP_WIDTH; ++x) {
+        for (int y = 0; y < BMP_HEIGHT; ++y) {
+
+            if (input_image[x][y] == WHITE) {
+                int survives = 1;
+
+                for (int k = 0; k < n_offsets; ++k) {
+                    int nx = x + offsets[k][0];
+                    int ny = y + offsets[k][1];
+
+                    // border check
+                    if (nx < 0 || ny < 0 || nx >= BMP_WIDTH || ny >= BMP_HEIGHT || input_image[nx][ny] != WHITE) {
+                        survives = 0;
+                        break;
+                    }
+                }
+
+                if (!survives) {
+                    output_image[x][y] = BLACK;
+                    eroded_any = 1;
+                } else {
+                    output_image[x][y] = WHITE;
+                }
+            } else {
+                output_image[x][y] = BLACK;
+            }
+        }
+    }
+
+    END_TIMER("erode_image");
+    return eroded_any;
 }
 
 void greyscale_bitmap(unsigned char input_image[BMP_WIDTH][BMP_HEIGHT][BMP_CHANNELS]) {
@@ -408,8 +411,7 @@ int main(int argc, char **argv) {
     int index = 0;
     int eroded_any = FALSE;
     do {
-        eroded_any = watershed_erode((index % 2 == 0 ? greyscale_image : greyscale_image_2),
-                             (index % 2 == 0 ? greyscale_image_2 : greyscale_image));
+        eroded_any = erode_image((index % 2 == 0 ? greyscale_image : greyscale_image_2), (index % 2 == 0 ? greyscale_image_2 : greyscale_image));
         int cells_found = detect_spots((index % 2 == 0 ? greyscale_image_2 : greyscale_image));
         total_cells += cells_found;
         char save_path[256];
