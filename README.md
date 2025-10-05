@@ -16,12 +16,6 @@ run the program
 bin/cell-counter
 ```
 
-## Features
-This program opperates over a GF(2**8) field and can correct up 16 errors, for message that, after encoding, is 255 long. 
-
-## Usage
-To alter the encoded message, simply open `main.c` and change the test arrays, please note that the message should be less than 223 long and of type `uint8_t`.
-
 ### Compilation
 ```bash
 make              # Regular optimised build
