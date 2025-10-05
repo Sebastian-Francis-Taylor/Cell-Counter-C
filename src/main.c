@@ -117,19 +117,24 @@ void print_coordinate() {
 }
 
 void save_greyscale_image(unsigned char image[BMP_WIDTH][BMP_HEIGHT], char *save_path) {
-    START_TIMER();
-    unsigned char saved_image[BMP_WIDTH][BMP_HEIGHT][BMP_CHANNELS];
+    // Allocate memory for BMP_WIDTH x BMP_HEIGHT x BMP_CHANNELS
+    unsigned char (*saved_image)[BMP_HEIGHT][BMP_CHANNELS] = malloc(sizeof(unsigned char[BMP_WIDTH][BMP_HEIGHT][BMP_CHANNELS]));
+    if (!saved_image) {
+        fprintf(stderr, "[ERROR] Could not allocate memory for saved_image\n");
+        return;
+    }
+
     for (int x = 0; x < BMP_WIDTH; ++x) {
         for (int y = 0; y < BMP_HEIGHT; ++y) {
-            unsigned char pixel = image[x][y]; // stores the pixel so it doesn't need to be read 3 times in loop below
+            unsigned char pixel = image[x][y];
             for (int z = 0; z < BMP_CHANNELS; ++z) {
-                saved_image[x][y][z] = pixel; // Use stored pixel
+                saved_image[x][y][z] = pixel;
             }
         }
     }
 
-    write_bitmap(saved_image, save_path);
-    END_TIMER("save_greyscale_image");
+    write_bitmap(saved_image, save_path); // type now matches
+    free(saved_image);
 }
 
 void save_image(unsigned char image[BMP_WIDTH][BMP_HEIGHT][BMP_CHANNELS], char *save_path) { write_bitmap(image, save_path); }
