@@ -224,16 +224,16 @@ void cross(unsigned char image[BMP_WIDTH][BMP_HEIGHT][BMP_CHANNELS], Coordinates
             int x2 = coordinates[z].x - x + half_hypotenuse;
             int y2 = coordinates[z].y + x - half_hypotenuse;
 
-            // Draws first diagonal (\)
+            // Draws first diagonal
             if (x1 >= 0 && x1 < BMP_WIDTH && y1 >= 0 && y1 < BMP_HEIGHT) {
-                image[x1][y1][0] = 255; // Red
+                image[x1][y1][0] = 255;
                 image[x1][y1][1] = 0;
                 image[x1][y1][2] = 0;
             }
 
-            // Draws second diagonal (/)
+            // Draws second diagonal
             if (x2 >= 0 && x2 < BMP_WIDTH && y2 >= 0 && y2 < BMP_HEIGHT) {
-                image[x2][y2][0] = 255; // Red
+                image[x2][y2][0] = 255;
                 image[x2][y2][1] = 0;
                 image[x2][y2][2] = 0;
             }
