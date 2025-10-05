@@ -1,8 +1,35 @@
 # Cell-Counter-C
-This is the solution to the Cell Counter assignment 1 in the course Computer Systems (02132) made by Sebastian Taylor (@Sebastian-Francis-Taylor) and Victor Reynolds (@slayervictor).
+This is a solution to the Cell Counter assignment 1 in the course Computer Systems (02132) made by Sebastian F. Taylor (@Sebastian-Francis-Taylor) and Victor Reynolds (@slayervictor).
 
 # Instructions
-Instructions here, when we are ready
+## Installation
+To install the program simply clone this repository:
+```bash
+git clone https://github.com/Sebastian-Francis-Taylor/Cell-Counter-C
+```
+compile the program
+```bash
+make
+```
+run the program
+```
+bin/cell-counter
+```
+
+## Features
+This program opperates over a GF(2**8) field and can correct up 16 errors, for message that, after encoding, is 255 long. 
+
+## Usage
+To alter the encoded message, simply open `main.c` and change the test arrays, please note that the message should be less than 223 long and of type `uint8_t`.
+
+### Compilation
+```bash
+make              # Regular optimised build
+make debug        # Debug build with symbols (creates cell-counter-debug)
+make valgrind     # Build debug version and run valgrind on it
+make timing       # Builds version with execution time print statements (creates cell-counter-timing)
+make clean        # Removes old builds 
+```
 
 # Assignment Checklist
 ## Tasks
@@ -23,9 +50,9 @@ Instructions here, when we are ready
 - [x] (5pt) Print results
 - [x] (15pt) Functional test
 - [x] (5pt) Execution time analysis
-- [ ] (5pt) Memory use analysis
+- [x] (5pt) Memory use analysis
 - [x] (25pt) Optimizations and enhancements (including testing)
-- [ ] (5pt) Report 
+- [x] (5pt) Report 
 
 ## Base Optimizations and enhancement
 - [x] Dynamic calculation of the threshold for the generation of the binary image. As previously mentioned, understanding and investigating the Otsu’s method is a good starting point.
