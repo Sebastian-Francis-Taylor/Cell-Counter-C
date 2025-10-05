@@ -137,12 +137,11 @@ unsigned int otsu_threshold(unsigned char input_image[BMP_WIDTH][BMP_HEIGHT]) {
     return optimal_threshold;
 }
 
-static void apply_threshold(unsigned int threshold, unsigned char input_image[BMP_WIDTH][BMP_HEIGHT],
-                            unsigned char output_image[BMP_WIDTH][BMP_HEIGHT]) {
+static void apply_threshold(unsigned int threshold, unsigned char input_image[BMP_WIDTH][BMP_HEIGHT]) {
     START_TIMER();
     for (int x = 0; x < BMP_WIDTH; ++x) {
         for (int y = 0; y < BMP_HEIGHT; ++y) {
-            input_image[x][y] = (input_image[x][y] <= threshold) ? 0 : 255;
+            input_image[x][y] = (input_image[x][y] <= threshold) ? BLACK : WHITE;
         }
     }
     END_TIMER("apply_threshold");
@@ -152,7 +151,7 @@ int erode_image(unsigned char input_image[BMP_WIDTH][BMP_HEIGHT], unsigned char 
     START_TIMER();
     int eroded_any = 0;
 
-    const int R = PATTERN_SIZE / 2;
+    const int R = PATTERN_SIZE >> 1;
 
     // Finding pattern offsets
     int offsets[PATTERN_SIZE * PATTERN_SIZE][2];
@@ -399,30 +398,40 @@ int main(int argc, char **argv) {
 
     unsigned int binary_threshold = otsu_threshold(greyscale_image);
     printf("[ %-5s ] binary_threshold (otsu_threshold) = %d\n", "DEBUG", binary_threshold);
-    apply_threshold(binary_threshold, greyscale_image, greyscale_image);
+    apply_threshold(binary_threshold, greyscale_image);
     save_greyscale_image(greyscale_image, "output/stage_0.bmp");
 
     unsigned char greyscale_image_2[BMP_WIDTH][BMP_HEIGHT];
     // copy to binary 2 image
     memcpy(greyscale_image_2, greyscale_image, sizeof(greyscale_image));
 
-    int total_cells = 0;
-    // potential optimisation: get rid of ternerary for detect_spots and save_greyscale_image and combine into one computation
+    unsigned char (*current)[BMP_HEIGHT] = greyscale_image;
+    unsigned char (*next)[BMP_HEIGHT] = greyscale_image_2;
+
     int index = 0;
+    int total_cells = 0;
     int eroded_any = FALSE;
+
     do {
-        eroded_any = erode_image((index % 2 == 0 ? greyscale_image : greyscale_image_2), (index % 2 == 0 ? greyscale_image_2 : greyscale_image));
-        int cells_found = detect_spots((index % 2 == 0 ? greyscale_image_2 : greyscale_image));
+        eroded_any = erode_image(current, next);
+        int cells_found = detect_spots(next);
         total_cells += cells_found;
+
         char save_path[256];
         snprintf(save_path, sizeof(save_path), "output/stage_%d.bmp", index);
-        save_greyscale_image((index % 2 == 0 ? greyscale_image_2 : greyscale_image), save_path);
+        save_greyscale_image(next, save_path);
+
+        // Swap pointers instead of using % 2
+        unsigned char (*tmp)[BMP_HEIGHT] = current;
+        current = next;
+        next = tmp;
+
         index++;
     } while (eroded_any);
 
+
     print_coordinate();
     printf("%d cells found in sample image '%s'\n", total_cells, argv[1]);
-    // generate_output_image(greyscale_image);
 
     cross(input_image, coordinates, CROSS_HYPOTENUSE);
 
